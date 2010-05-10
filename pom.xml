@@ -2,10 +2,23 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                       http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>ning.trie</groupId>
-  <artifactId>Trie</artifactId>
+  <groupId>com.ning</groupId>
+  <artifactId>tr13</artifactId>
+  <name>Tr13</name>
   <version>0.1.0</version>
-
+  <!-- TODO: as OSGi bundle -->
+  <packaging>jar</packaging>
+  <description>Library for building simple compact Tries, for space-efficient
+access to large in-memory datasets.
+  </description>
+  <scm>
+    <connection>scm:git:git@github.com:ning/tr13.git</connection>
+    <url>scm:git:git@github.com:ning/tr13.git</url>
+    <developerConnection>scm:git:git@github.com:ning/tr13.git</developerConnection>
+  </scm>
+  <prerequisites>
+    <maven>2.0.9</maven>
+  </prerequisites>
   <dependencies>
     <dependency>
       <groupId>org.testng</groupId>
@@ -28,7 +41,7 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>-Xms1024m -Xmx1024m</argLine>
+          <argLine>-Xms512m -Xmx512m</argLine>
           <excludedGroups>slow</excludedGroups>
         </configuration>
       </plugin>
