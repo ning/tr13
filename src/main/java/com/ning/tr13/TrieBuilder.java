@@ -2,6 +2,13 @@ package com.ning.tr13;
 
 import java.io.*;
 
+/**
+ * Class used for building binary trie structure from input source and
+ * writing it to an output target; input and output are typically
+ * files.
+ * 
+ * @author tatu
+ */
 public class TrieBuilder
 {
     protected final KeyValueReader _reader;

@@ -2,19 +2,33 @@ package com.ning.tr13;
 
 import java.io.*;
 
+/**
+ * Class that defines abstraction used for reading trie entries
+ * (from a file or other resource).
+ * 
+ * @author tatu
+ */
 public class KeyValueReader
 {
-    public final static char SEPARATOR_CHAR = '|';
+    public final static char DEFAULT_SEPARATOR_CHAR = '|';
     
     protected final BufferedReader _reader;
 
+    protected final char _separatorChar;
+    
     protected int _lineNumber;
     
     protected long _value;
     
     public KeyValueReader(InputStream in) throws IOException
     {
+        this(in, DEFAULT_SEPARATOR_CHAR);
+    }
+    
+    public KeyValueReader(InputStream in, char sepChar) throws IOException
+    {
         _reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+        _separatorChar = sepChar;
     }
 
     public void close() throws IOException {
@@ -33,7 +47,7 @@ public class KeyValueReader
             ++_lineNumber;
             line = line.trim();
             if (line.length() == 0 || line.startsWith("#")) continue;
-            int ix = line.indexOf(SEPARATOR_CHAR);
+            int ix = line.indexOf(_separatorChar);
             if (ix > 0) {
                 String id = line.substring(0, ix);
                 try {
