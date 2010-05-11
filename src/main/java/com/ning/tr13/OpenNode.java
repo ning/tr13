@@ -81,8 +81,9 @@ public class OpenNode
         ClosedNode lastKid = _currentChild.close();
         ClosedNode[] closedKids;
         if (_closedChildren == null) {
-            if (lastKid.isLeaf()) {
-                // TODO: prefixed leaf!!!
+            if (lastKid.isLeaf() && !_hasValue) {
+                // single child which is leaf -> suffix leaf
+                return ClosedNode.suffixLeaf(_nodeByte, lastKid);
             }
             closedKids = new ClosedNode[] { lastKid };
         } else {

@@ -27,7 +27,7 @@ public class VInt
     /**
      * Method for converting given unsigned value (meaning that no sign bit is assumed)
      * 
-     * @return Length of resulting VInt serialization in bytes
+     * @return Offset after serializing VInt
      */
     public static int unsignedToBytes(long value, int bitsForFirstByte, byte[] result, int offset)
     {
@@ -35,14 +35,12 @@ public class VInt
         if (bitsForFirstByte < 8) {
             mask >>= (8 - bitsForFirstByte);
         }
-        int length = 1;
         result[offset++] = (byte) (((int) value) & mask);
         value  = (value >>> mask);
         while (value != 0L) {
             result[offset++] = (byte) value;
             value >>= 8;
-            ++length;
         }
-        return length;
+        return offset;
     }
 }

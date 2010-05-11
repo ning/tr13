@@ -3,7 +3,7 @@ package com.ning.tr13;
 public abstract class ClosedNode
 {
     public final static int TYPE_LEAF_SIMPLE = 0;
-    public final static int TYPE_LEAF_WITH_PREFIX = 1;
+    public final static int TYPE_LEAF_WITH_SUFFIX = 1;
     public final static int TYPE_BRANCH_SIMPLE = 2;    
     public final static int TYPE_BRANCH_WITH_VALUE = 3;
 
@@ -46,6 +46,21 @@ public abstract class ClosedNode
     public static SerializedNode serialized(ClosedNode node) {
         return new SerializedNode(node._nextByte, node.serialize());
     }
+
+    public static Leaf suffixLeaf(byte b, ClosedNode node)
+    {
+        Leaf leaf = (Leaf) node;
+        if (leaf instanceof SimpleLeaf) { // convert into suffix one
+            return new SuffixLeaf(b, leaf.value(), new byte[] { leaf.nextByte() });
+        }
+        // already suffixed one
+        SuffixLeaf old = (SuffixLeaf) leaf;
+        byte[] oldBytes = old._suffix;
+        byte[] newBytes = new byte[1 + oldBytes.length];
+        System.arraycopy(oldBytes, 0, newBytes, 1, oldBytes.length);
+        newBytes[0] = leaf.nextByte();
+        return new SuffixLeaf(b, leaf.value(), newBytes);
+    }
     
     // // // Sub-classes
 
@@ -81,6 +96,21 @@ public abstract class ClosedNode
             return offset+len;
         }
     }
+
+    protected abstract static class Leaf
+        extends ClosedNode
+    {
+        protected final long _value;
+
+        protected Leaf(byte b, long v) {
+            super(b);
+            _value = v;
+        }
+
+        public boolean isLeaf() { return true; }
+
+        public long value() { return _value; }
+    }
     
     /**
      * Simple leaf means a leaf with no additional suffix (single-byte/char
@@ -88,16 +118,14 @@ public abstract class ClosedNode
      * is retained here to keep branch object simpler.
      */
     protected final static class SimpleLeaf
-        extends ClosedNode
+        extends Leaf
     {
-        protected final long _value;
         
-        protected SimpleLeaf(byte b, long value)
+        protected SimpleLeaf(byte b, long v)
         {
-            super(b);
-            _value = value;
+            super(b, v);
         }
-
+        
         public long length() {
             return VInt.lengthForUnsigned(_value, 6);
         }
@@ -111,11 +139,49 @@ public abstract class ClosedNode
             return result;
         }
         public int serialize(byte[] result, int offset) {
-            offset += VInt.unsignedToBytes(_value, 6, result, offset);
+            offset = VInt.unsignedToBytes(_value, 6, result, offset);
             return offset;
         }
     }
 
+    protected final static class SuffixLeaf
+        extends Leaf
+    {
+        protected final byte[] _suffix;
+
+        static int count = 0;
+        
+        protected SuffixLeaf(byte b, long value, byte[] suffix)
+        {
+            super(b, value);
+            _suffix = suffix;
+        }
+    
+        public long length() {
+            int len = _suffix.length;
+            return VInt.lengthForUnsigned(_value, 6)
+                + VInt.lengthForUnsigned(len, 8)
+                + len;
+        }
+    
+        public int typeBits() { return TYPE_LEAF_WITH_SUFFIX; }
+    
+        public byte[] serialize() {
+            byte[] result = new byte[(int) length()];
+            serialize(result, 0);
+            return result;
+        }
+        public int serialize(byte[] result, int offset)
+        {
+            offset = VInt.unsignedToBytes(_value, 6, result, offset);
+            int len = _suffix.length;
+            offset = VInt.unsignedToBytes(len, 8, result, 0);
+            System.arraycopy(_suffix, 0, result, offset, len);
+            offset += len;
+            return offset;
+        }
+    }
+    
     /**
      * Simple branch just means that branch node does not have associated
      * value. Serialization contains leading VInt for total length of
@@ -144,26 +210,20 @@ public abstract class ClosedNode
 
         public byte[] serialize()
         {
-            long contentLen = length();
-            byte[] result = new byte[(int) contentLen];
+            long contentLen = lengthOfContent();
+            byte[] result = new byte[(int) (contentLen + VInt.lengthForUnsigned(contentLen, 6))];
             // First: serialize length indicator
             int offset = VInt.unsignedToBytes(contentLen, 6, result, 0);
-            for (ClosedNode n : _children) {
-                result[offset++] = n.nextByte();
-                offset = n.serialize(result, offset);                
-            }
+            offset = serializeChildren(result, offset);
             return result;
         }
 
         public int serialize(byte[] result, int offset)
         {
-            long contentLen = length();
+            long contentLen = lengthOfContent();
             // First: serialize length indicator
             offset = VInt.unsignedToBytes(contentLen, 6, result, offset);
-            for (ClosedNode n : _children) {
-                result[offset++] = n.nextByte();                
-                offset = n.serialize(result, offset);
-            }
+            offset = serializeChildren(result, offset);
             return offset;
         }
         
@@ -171,7 +231,7 @@ public abstract class ClosedNode
          * Helper method that calculates length of all contained data (children,
          * branching bytes).
          */
-        private long lengthOfContent()
+        protected long lengthOfContent()
         {
             // one byte per child for branching:
             long len = (long) _children.length;
@@ -180,6 +240,15 @@ public abstract class ClosedNode
                 len += n.length();
             }
             return len;
+        }
+
+        protected int serializeChildren(byte[] result, int offset)
+        {
+            for (ClosedNode n : _children) {
+                result[offset++] = n.nextByte();
+                offset = n.serialize(result, offset);                
+            }
+            return offset;
         }
     }
 
@@ -211,10 +280,7 @@ public abstract class ClosedNode
             // Then value for this node
             offset = VInt.unsignedToBytes(_value, 8, result, offset);
             // then contents
-            for (ClosedNode n : _children) {
-                result[offset++] = n.nextByte();
-                offset = n.serialize(result, offset);              
-            }
+            offset = serializeChildren(result, offset);
             return result;
         }
 
@@ -225,10 +291,7 @@ public abstract class ClosedNode
             offset = VInt.unsignedToBytes(contentLen, 6, result, offset);
             // Then value for this node
             offset = VInt.unsignedToBytes(_value, 8, result, offset);
-            for (ClosedNode n : _children) {
-                result[offset++] = n.nextByte();                
-                offset = n.serialize(result, offset);
-            }
+            offset = serializeChildren(result, offset);
             return offset;
         }
     }
