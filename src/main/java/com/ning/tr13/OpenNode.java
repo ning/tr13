@@ -9,6 +9,13 @@ import java.util.*;
 public class OpenNode
 {
     /**
+     * For memory usage limitation, we will pre-serialize branches that are
+     * not "too big"; basically we get most compaction by serializing
+     * medium-sized branches eagerly
+     */
+    private final static long MAX_SERIALIZED = 64000L;
+    
+    /**
      * Value node has, if any
      */
     protected long _nodeValue;
@@ -84,9 +91,17 @@ public class OpenNode
             closedKids[_closedChildren.size()] = lastKid;
         }
         // ok, branch. Value?
+        ClosedNode branch;
         if (_hasValue) {
-            return ClosedNode.valueBranch(_nodeByte, closedKids, _nodeValue);
+            branch = ClosedNode.valueBranch(_nodeByte, closedKids, _nodeValue);
+        } else {
+            branch = ClosedNode.simpleBranch(_nodeByte, closedKids);
+
         }
-        return ClosedNode.simpleBranch(_nodeByte, closedKids);
+        // one more thing: big enough to need serialization? (leaves we need not bother with)
+        if (branch.length() < MAX_SERIALIZED) {
+            branch = ClosedNode.serialized(branch);
+        }
+        return branch;
     }
 }

@@ -65,7 +65,7 @@ public class TrieBuilder
                 curr = next;
             }
 
-            if ((++count & 0xFFFF) == 0) {
+            if ((++count & 0xFFFFF) == 0) {
                 System.out.println("Building: "+(count>>10)+"k lines processed, "
                         +(skipped>>10)+"k skipped");
             }
