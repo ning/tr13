@@ -5,6 +5,9 @@ import java.io.*;
 /**
  * Class that defines abstraction used for reading trie entries
  * (from a file or other resource).
+ *<p>
+ * Currently customization can be done by sub-classing; should
+ * refactor to allow bit cleaner extensibility.
  * 
  * @author tatu
  */

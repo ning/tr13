@@ -66,7 +66,7 @@ public class TrieBuilder
     }
     
     /**
-     * Main build method that will construct full Trie and return it as
+     * Main build method that will construct full InputCollator and return it as
      * a {@link ClosedNode} instance, which can be simply serialized
      * to an {@link OutputStream}
      * 
