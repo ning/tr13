@@ -1,13 +1,24 @@
 package com.ning.tr13;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 public abstract class ClosedNode
 {
+    /**
+     * This constants is used as safe minimum size for temporary
+     * buffer to pass to {@link #writeTo} method. It is actually
+     * set to quite a bit higher than strict minimum, just to give
+     * some room for expansion in case structure changes.
+     */
+    public final static int MINIMUM_TEMP_BUFFER_LENGTH = 64;
+    
+    // // // Type  bits
+    
     public final static int TYPE_LEAF_SIMPLE = 0;
     public final static int TYPE_LEAF_WITH_SUFFIX = 1;
     public final static int TYPE_BRANCH_SIMPLE = 2;    
     public final static int TYPE_BRANCH_WITH_VALUE = 3;
-
-    //private static int totalCreated = 0;    
 
     /**
      * Byte that parent node (branch) will use to branch into this node.
@@ -17,11 +28,19 @@ public abstract class ClosedNode
     protected ClosedNode(byte nb)
     {
         _nextByte = nb;
-        //if ((++totalCreated & 0x3FFFFFF) == 0) System.out.println("Created "+(totalCreated >> 10)+"k closed nodes");
     }
 
-    public final byte nextByte() { return _nextByte; }
+    /*
+    /***********************************************************
+    /* Public API
+    /***********************************************************
+     */
     
+    public final byte nextByte() { return _nextByte; }
+
+    /**
+     * @return Total length of this node, including all of its children
+     */
     public abstract long length();
     public abstract int typeBits();
     public abstract boolean isLeaf();
@@ -29,7 +48,18 @@ public abstract class ClosedNode
     public abstract int serialize(byte[] result, int offset);
     public abstract byte[] serialize();
 
-    // // // Factory methods
+    /**
+     * Serialization method that will serialize contents into given
+     * output stream, possibly using given buffer (to avoid additional
+     * memory allocations).
+     */
+    public abstract void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException;
+    
+    /*
+    /**********************************************************
+    /* Factory methods
+    /**********************************************************
+     */
 
     public static SimpleLeaf simpleLeaf(byte b, long v) {
         return new SimpleLeaf(b, v);
@@ -62,7 +92,11 @@ public abstract class ClosedNode
         return new SuffixLeaf(b, leaf.value(), newBytes);
     }
     
-    // // // Sub-classes
+    /*
+    /**********************************************************
+    /* Sub-classes
+    /**********************************************************
+     */
 
     /**
      * SerializedNode is a full binary serialization of a leaf or branch node;
@@ -95,6 +129,11 @@ public abstract class ClosedNode
             System.arraycopy(_data, 0, result, offset, len);
             return offset+len;
         }
+
+        public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
+        {
+            out.write(_data);
+        }
     }
 
     protected abstract static class Leaf
@@ -120,7 +159,6 @@ public abstract class ClosedNode
     protected final static class SimpleLeaf
         extends Leaf
     {
-        
         protected SimpleLeaf(byte b, long v)
         {
             super(b, v);
@@ -141,6 +179,12 @@ public abstract class ClosedNode
         public int serialize(byte[] result, int offset) {
             offset = VInt.unsignedToBytes(_value, 6, result, offset);
             return offset;
+        }
+
+        public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
+        {
+            // Note: caller must ensure buffer is big enough
+            out.write(tmpBuf, 0, serialize(tmpBuf, 0));
         }
     }
 
@@ -171,6 +215,7 @@ public abstract class ClosedNode
             serialize(result, 0);
             return result;
         }
+
         public int serialize(byte[] result, int offset)
         {
             offset = VInt.unsignedToBytes(_value, 6, result, offset);
@@ -179,6 +224,12 @@ public abstract class ClosedNode
             System.arraycopy(_suffix, 0, result, offset, len);
             offset += len;
             return offset;
+        }
+
+        public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
+        {
+            // Note: caller must ensure buffer is big enough
+            out.write(tmpBuf, 0, serialize(tmpBuf, 0));
         }
     }
     
@@ -225,6 +276,17 @@ public abstract class ClosedNode
             offset = VInt.unsignedToBytes(contentLen, 6, result, offset);
             offset = serializeChildren(result, offset);
             return offset;
+        }
+
+        public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
+        {
+            long contentLen = lengthOfContent();
+            // first simple length indicator
+            out.write(tmpBuf, 0, VInt.unsignedToBytes(contentLen, 6, tmpBuf, 0));
+            // then children
+            for (ClosedNode n : _children) {
+                n.serializeTo(out, tmpBuf);
+            }
         }
         
         /**
@@ -293,6 +355,19 @@ public abstract class ClosedNode
             offset = VInt.unsignedToBytes(_value, 8, result, offset);
             offset = serializeChildren(result, offset);
             return offset;
+        }
+
+        public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
+        {
+            long contentLen = lengthOfContent();
+            // first simple length indicator
+            out.write(tmpBuf, 0, VInt.unsignedToBytes(contentLen, 6, tmpBuf, 0));
+            // Then value for this node
+            out.write(tmpBuf, 0, VInt.unsignedToBytes(_value, 8, tmpBuf, 0));
+            // then children
+            for (ClosedNode n : _children) {
+                n.serializeTo(out, tmpBuf);
+            }
         }
     }
 }

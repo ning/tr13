@@ -13,14 +13,11 @@ public class VInt
     public static int lengthForUnsigned(long value, int bitsForFirstByte)
     {
         value >>>= bitsForFirstByte;
-        if (value == 0L) {
-            return 1;
-        }
         int bytes = 1;
-        do {
+        while (value != 0L) {
             value >>= 8;
             ++bytes;
-        } while (value != 0);
+        }
         return bytes;
     }
 
