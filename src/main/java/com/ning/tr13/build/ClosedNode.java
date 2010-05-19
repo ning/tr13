@@ -3,9 +3,16 @@ package com.ning.tr13.build;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import com.ning.tr13.TrieNode;
 import com.ning.tr13.util.VInt;
 
+/**
+ * This class represents in-memory nodes that are ready to be serialized.
+ * 
+ * @author tatu
+ */
 public abstract class ClosedNode
+    implements TrieNode
 {
     /**
      * This constants is used as safe minimum size for temporary
@@ -34,28 +41,27 @@ public abstract class ClosedNode
 
     /*
     /***********************************************************
-    /* Public API
+    /* Public API, TrieNode
+    /***********************************************************
+     */
+
+    public abstract long length();
+    
+    public abstract void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException;
+    
+    /*
+    /***********************************************************
+    /* Public API, other
     /***********************************************************
      */
     
     public final byte nextByte() { return _nextByte; }
 
-    /**
-     * @return Total length of this node, including all of its children
-     */
-    public abstract long length();
     public abstract int typeBits();
     public abstract boolean isLeaf();
 
     public abstract int serialize(byte[] result, int offset);
     public abstract byte[] serialize();
-
-    /**
-     * Serialization method that will serialize contents into given
-     * output stream, possibly using given buffer (to avoid additional
-     * memory allocations).
-     */
-    public abstract void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException;
     
     /*
     /**********************************************************
@@ -92,6 +98,18 @@ public abstract class ClosedNode
         System.arraycopy(oldBytes, 0, newBytes, 1, oldBytes.length);
         newBytes[0] = leaf.nextByte();
         return new SuffixLeaf(b, leaf.value(), newBytes);
+    }
+
+    /*
+    /**********************************************************
+    /* Other methods
+    /**********************************************************
+     */
+    
+    protected void _addTypeBits(byte[] buffer, int offset)
+    {
+        int i = buffer[offset];
+        buffer[offset] = (byte) (i | (typeBits() << 6));
     }
     
     /*
@@ -176,11 +194,14 @@ public abstract class ClosedNode
         public byte[] serialize() {
             byte[] result = new byte[VInt.lengthForUnsigned(_value, 6)];
             VInt.unsignedToBytes(_value, 6, result, 0);
+            _addTypeBits(result, 0);
             return result;
         }
-        public int serialize(byte[] result, int offset) {
-            offset = VInt.unsignedToBytes(_value, 6, result, offset);
-            return offset;
+        public int serialize(byte[] result, int offset)
+        {
+            int resultOffset = VInt.unsignedToBytes(_value, 6, result, offset);
+            _addTypeBits(result, offset);
+            return resultOffset;
         }
 
         public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
@@ -212,7 +233,8 @@ public abstract class ClosedNode
     
         public int typeBits() { return TYPE_LEAF_WITH_SUFFIX; }
     
-        public byte[] serialize() {
+        public byte[] serialize()
+        {
             byte[] result = new byte[(int) length()];
             serialize(result, 0);
             return result;
@@ -220,7 +242,9 @@ public abstract class ClosedNode
 
         public int serialize(byte[] result, int offset)
         {
+            int origOffset = offset;
             offset = VInt.unsignedToBytes(_value, 6, result, offset);
+            _addTypeBits(result, origOffset);
             int len = _suffix.length;
             offset = VInt.unsignedToBytes(len, 8, result, 0);
             System.arraycopy(_suffix, 0, result, offset, len);
@@ -267,6 +291,7 @@ public abstract class ClosedNode
             byte[] result = new byte[(int) (contentLen + VInt.lengthForUnsigned(contentLen, 6))];
             // First: serialize length indicator
             int offset = VInt.unsignedToBytes(contentLen, 6, result, 0);
+            _addTypeBits(result, 0);
             offset = serializeChildren(result, offset);
             return result;
         }
@@ -275,7 +300,9 @@ public abstract class ClosedNode
         {
             long contentLen = lengthOfContent();
             // First: serialize length indicator
+            int origOffset = offset;
             offset = VInt.unsignedToBytes(contentLen, 6, result, offset);
+            _addTypeBits(result, origOffset);
             offset = serializeChildren(result, offset);
             return offset;
         }
@@ -284,7 +311,9 @@ public abstract class ClosedNode
         {
             long contentLen = lengthOfContent();
             // first simple length indicator
-            out.write(tmpBuf, 0, VInt.unsignedToBytes(contentLen, 6, tmpBuf, 0));
+            int ptr = VInt.unsignedToBytes(contentLen, 6, tmpBuf, 0);
+            _addTypeBits(tmpBuf, 0);
+            out.write(tmpBuf, 0, ptr);
             // then children
             for (ClosedNode n : _children) {
                 n.serializeTo(out, tmpBuf);
@@ -341,6 +370,7 @@ public abstract class ClosedNode
             byte[] result = new byte[(int) contentLen];
             // First: serialize length indicator
             int offset = VInt.unsignedToBytes(contentLen, 6, result, 0);
+            _addTypeBits(result, 0);
             // Then value for this node
             offset = VInt.unsignedToBytes(_value, 8, result, offset);
             // then contents
@@ -352,7 +382,9 @@ public abstract class ClosedNode
         {
             long contentLen = length();
             // First: serialize length indicator
+            int origOffset = offset;
             offset = VInt.unsignedToBytes(contentLen, 6, result, offset);
+            _addTypeBits(result, origOffset);
             // Then value for this node
             offset = VInt.unsignedToBytes(_value, 8, result, offset);
             offset = serializeChildren(result, offset);
@@ -363,7 +395,9 @@ public abstract class ClosedNode
         {
             long contentLen = lengthOfContent();
             // first simple length indicator
-            out.write(tmpBuf, 0, VInt.unsignedToBytes(contentLen, 6, tmpBuf, 0));
+            int ptr = VInt.unsignedToBytes(contentLen, 6, tmpBuf, 0);
+            _addTypeBits(tmpBuf, 0);
+            out.write(tmpBuf, 0, ptr);
             // Then value for this node
             out.write(tmpBuf, 0, VInt.unsignedToBytes(_value, 8, tmpBuf, 0));
             // then children
