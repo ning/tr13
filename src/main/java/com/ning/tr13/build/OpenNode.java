@@ -1,6 +1,7 @@
-package com.ning.tr13;
+package com.ning.tr13.build;
 
 import java.util.*;
+
 
 /**
  * Class that represents currently open node in tree: open meaning that
@@ -49,6 +50,9 @@ public class OpenNode
         }
     }
 
+    public byte getNodeByte() { return _nodeByte; }
+    public OpenNode getCurrentChild() { return _currentChild; }
+    
     /**
      * Main mutation method used to close currently open child node
      * (if any), and optional start a new open child node.

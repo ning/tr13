@@ -2,6 +2,9 @@ package com.ning.tr13;
 
 import java.io.*;
 
+import com.ning.tr13.build.ClosedNode;
+import com.ning.tr13.build.OpenNode;
+
 /**
  * Class used for building binary trie structure from input source and
  * writing it to an output target; input and output are typically
@@ -89,8 +92,8 @@ public class TrieBuilder
             int i = 0;
             // first, skip out common ancestry
             while (true) {
-                OpenNode next = curr._currentChild;
-                if (next == null || next._nodeByte != id[i]) break;
+                OpenNode next = curr.getCurrentChild();
+                if (next == null || next.getNodeByte() != id[i]) break;
                 if (++i >= id.length) { // sanity check, could skip
                     // appears that we have some of this problem
                     throw new IllegalArgumentException("Malformed input, line "

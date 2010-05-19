@@ -1,7 +1,9 @@
-package com.ning.tr13;
+package com.ning.tr13.build;
 
 import java.io.IOException;
 import java.io.OutputStream;
+
+import com.ning.tr13.util.VInt;
 
 public abstract class ClosedNode
 {

@@ -1,4 +1,4 @@
-package com.ning.tr13;
+package com.ning.tr13.util;
 
 /**
  * Helper class for dealing with Variable-length integers (VInts).

@@ -1,5 +1,7 @@
 package com.ning.tr13;
 
+import com.ning.tr13.util.VInt;
+
 public class VIntTest
     extends junit.framework.TestCase
 {
