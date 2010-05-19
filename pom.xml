@@ -34,8 +34,8 @@ access to large in-memory datasets.
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
+          <source>1.6</source>
+          <target>1.6</target>
         </configuration>
       </plugin>
         <plugin><!-- plug-in to attach source bundle in repo -->

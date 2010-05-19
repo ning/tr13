@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 import com.ning.tr13.KeyValueReader;
 import com.ning.tr13.TrieConstants;
-import com.ning.tr13.TrieNode;
 import com.ning.tr13.util.VInt;
 
 /**

@@ -3,6 +3,7 @@ package com.ning.tr13.build;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import com.ning.tr13.TrieConstants;
 import com.ning.tr13.TrieNode;
 import com.ning.tr13.util.VInt;
 
@@ -12,6 +13,7 @@ import com.ning.tr13.util.VInt;
  * @author tatu
  */
 public abstract class ClosedNode
+    extends TrieConstants
     implements TrieNode
 {
     /**
@@ -20,14 +22,7 @@ public abstract class ClosedNode
      * set to quite a bit higher than strict minimum, just to give
      * some room for expansion in case structure changes.
      */
-    public final static int MINIMUM_TEMP_BUFFER_LENGTH = 64;
-    
-    // // // Type  bits
-    
-    public final static int TYPE_LEAF_SIMPLE = 0;
-    public final static int TYPE_LEAF_WITH_SUFFIX = 1;
-    public final static int TYPE_BRANCH_SIMPLE = 2;    
-    public final static int TYPE_BRANCH_WITH_VALUE = 3;
+    public final static int MINIMUM_TEMP_BUFFER_LENGTH = 64;    
 
     /**
      * Byte that parent node (branch) will use to branch into this node.
@@ -185,7 +180,7 @@ public abstract class ClosedNode
         }
         
         public long length() {
-            return VInt.lengthForUnsigned(_value, 6);
+            return VInt.lengthForUnsigned(_value, FIRST_BYTE_BITS_FOR_LEAVES);
         }
 
         public int typeBits() { return TYPE_LEAF_SIMPLE; }
@@ -193,13 +188,13 @@ public abstract class ClosedNode
     
         public byte[] serialize() {
             byte[] result = new byte[VInt.lengthForUnsigned(_value, 6)];
-            VInt.unsignedToBytes(_value, 6, result, 0);
+            VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_LEAVES, result, 0);
             _addTypeBits(result, 0);
             return result;
         }
         public int serialize(byte[] result, int offset)
         {
-            int resultOffset = VInt.unsignedToBytes(_value, 6, result, offset);
+            int resultOffset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_LEAVES, result, offset);
             _addTypeBits(result, offset);
             return resultOffset;
         }
@@ -226,7 +221,7 @@ public abstract class ClosedNode
     
         public long length() {
             int len = _suffix.length;
-            return VInt.lengthForUnsigned(_value, 6)
+            return VInt.lengthForUnsigned(_value, FIRST_BYTE_BITS_FOR_LEAVES)
                 + VInt.lengthForUnsigned(len, 8)
                 + len;
         }
@@ -243,10 +238,10 @@ public abstract class ClosedNode
         public int serialize(byte[] result, int offset)
         {
             int origOffset = offset;
-            offset = VInt.unsignedToBytes(_value, 6, result, offset);
+            offset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_LEAVES, result, offset);
             _addTypeBits(result, origOffset);
             int len = _suffix.length;
-            offset = VInt.unsignedToBytes(len, 8, result, 0);
+            offset = VInt.unsignedToBytes(len, 8, result, offset);
             System.arraycopy(_suffix, 0, result, offset, len);
             offset += len;
             return offset;
@@ -254,8 +249,12 @@ public abstract class ClosedNode
 
         public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
         {
-            // Note: caller must ensure buffer is big enough
-            out.write(tmpBuf, 0, serialize(tmpBuf, 0));
+            int offset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_LEAVES, tmpBuf, 0);
+            _addTypeBits(tmpBuf, 0);
+            int suffixLen = _suffix.length;
+            offset = VInt.unsignedToBytes(suffixLen, 8, tmpBuf, offset);
+            out.write(tmpBuf, 0, offset);
+            out.write(_suffix, 0, suffixLen);
         }
     }
     
@@ -288,9 +287,9 @@ public abstract class ClosedNode
         public byte[] serialize()
         {
             long contentLen = lengthOfContent();
-            byte[] result = new byte[(int) (contentLen + VInt.lengthForUnsigned(contentLen, 6))];
+            byte[] result = new byte[(int) (contentLen + VInt.lengthForUnsigned(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES))];
             // First: serialize length indicator
-            int offset = VInt.unsignedToBytes(contentLen, 6, result, 0);
+            int offset = VInt.unsignedToBytes(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES, result, 0);
             _addTypeBits(result, 0);
             offset = serializeChildren(result, offset);
             return result;
@@ -301,7 +300,7 @@ public abstract class ClosedNode
             long contentLen = lengthOfContent();
             // First: serialize length indicator
             int origOffset = offset;
-            offset = VInt.unsignedToBytes(contentLen, 6, result, offset);
+            offset = VInt.unsignedToBytes(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES, result, offset);
             _addTypeBits(result, origOffset);
             offset = serializeChildren(result, offset);
             return offset;
@@ -362,14 +361,20 @@ public abstract class ClosedNode
             return super.length() + VInt.lengthForUnsigned(_value, 8);
         }
 
+        protected long lengthOfContent()
+        {
+            // same as super, plus associated value
+            return super.lengthOfContent() + VInt.lengthForUnsigned(_value, 8);
+        }
+        
         public int typeBits() { return TYPE_BRANCH_WITH_VALUE; }
 
         public byte[] serialize()
         {
-            long contentLen = length();
-            byte[] result = new byte[(int) contentLen];
+            long contentLen = lengthOfContent();
+            byte[] result = new byte[(int) (contentLen + VInt.lengthForUnsigned(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES))];
             // First: serialize length indicator
-            int offset = VInt.unsignedToBytes(contentLen, 6, result, 0);
+            int offset = VInt.unsignedToBytes(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES, result, 0);
             _addTypeBits(result, 0);
             // Then value for this node
             offset = VInt.unsignedToBytes(_value, 8, result, offset);
@@ -383,7 +388,7 @@ public abstract class ClosedNode
             long contentLen = length();
             // First: serialize length indicator
             int origOffset = offset;
-            offset = VInt.unsignedToBytes(contentLen, 6, result, offset);
+            offset = VInt.unsignedToBytes(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES, result, offset);
             _addTypeBits(result, origOffset);
             // Then value for this node
             offset = VInt.unsignedToBytes(_value, 8, result, offset);
@@ -394,8 +399,8 @@ public abstract class ClosedNode
         public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
         {
             long contentLen = lengthOfContent();
-            // first simple length indicator
-            int ptr = VInt.unsignedToBytes(contentLen, 6, tmpBuf, 0);
+            // first simple length indicators
+            int ptr = VInt.unsignedToBytes(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES, tmpBuf, 0);
             _addTypeBits(tmpBuf, 0);
             out.write(tmpBuf, 0, ptr);
             // Then value for this node

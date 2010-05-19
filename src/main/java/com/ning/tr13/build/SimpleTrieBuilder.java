@@ -46,6 +46,7 @@ public class SimpleTrieBuilder
         TrieNode root = build();
         // ok; now we now total payload length, write it out:
         long len = root.length();
+        System.out.println("Payload length: "+len);
         for (int i = 15; i >= 8; --i) {
             tmpBuffer[i] = (byte) len;
             len >>= 8;
@@ -53,6 +54,7 @@ public class SimpleTrieBuilder
         out.write(tmpBuffer, 0, 16);
         // and then serialize the trie payload
         root.serializeTo(out, tmpBuffer);
+        System.out.println("Completed.");
         
         out.flush();
     }
@@ -76,8 +78,7 @@ public class SimpleTrieBuilder
             while (true) {
                 OpenNode next = curr.getCurrentChild();
                 if (next == null || next.getNodeByte() != id[i]) break;
-                if (++i >= id.length) { // sanity check, could skip
-                    // appears that we have some of this problem
+                if (++i >= id.length) { // sanity check, could skip, but better safe than sorry
                     throw new IllegalArgumentException("Malformed input, line "
                             +_reader.getLineNumber()+": id '"+idStr+"' not properly ordered");
                 }

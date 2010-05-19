@@ -22,39 +22,57 @@ public class VIntTest
 
     public void testRoundTrip() throws Exception
     {
+        // test with different number of bits available in first byte
+        _testRoundTrip(8);
+        _testRoundTrip(7);
+        _testRoundTrip(6);
+        _testRoundTrip(5);
+        _testRoundTrip(4);
+    }
+
+    /*
+    /**********************************************************
+    /* Helper methods
+    /**********************************************************
+     */
+    
+    private void _testRoundTrip(int bitsInFirstByte) throws Exception
+    {
         // first, small values
-        _assertRoundtrip(0L);
-        _assertRoundtrip(1L);
-        _assertRoundtrip(127L);
-        _assertRoundtrip(128L);
-        _assertRoundtrip(-1L);
-        _assertRoundtrip(-127L);
-        _assertRoundtrip(-255L);
+        _assertRoundtrip(0L, bitsInFirstByte);
+        _assertRoundtrip(1L, bitsInFirstByte);
+        _assertRoundtrip(127L, bitsInFirstByte);
+        _assertRoundtrip(128L, bitsInFirstByte);
+        _assertRoundtrip(-1L, bitsInFirstByte);
+        _assertRoundtrip(-127L, bitsInFirstByte);
+        _assertRoundtrip(-255L, bitsInFirstByte);
 
         // then, single bit values (0x2,0x4, ... 0x80000000)
         for (int bit = 1; bit < 64; ++bit) {
             long value = 1L << bit;
-            _assertRoundtrip(value);
+            _assertRoundtrip(value, bitsInFirstByte);
         }
         // and 'all ones'
         for (long value = 0x3; value != -1L; value = (value << 1) + 1) {
-            _assertRoundtrip(value);            
+            _assertRoundtrip(value, bitsInFirstByte);
         }
     }
 
-    private void _assertRoundtrip(long value)
+    private void _assertRoundtrip(long value, int bitsForFirstByte)
     {
-        final int BITS_FOR_FIRST_BYTE = 6;
         // up to 10 bytes for encoded
         byte[] buffer = new byte[11];
         long[] resultLong = new long[1];
-        int ptr = VInt.unsignedToBytes(value, BITS_FOR_FIRST_BYTE, buffer, 1);
-        // ensure that first 2 bits are clear
-        assertEquals(0, buffer[1] & 0xC0);
+        int ptr = VInt.unsignedToBytes(value, bitsForFirstByte, buffer, 1);
+        // ensure that first N bits are clear
+        if (bitsForFirstByte < 8) {
+            int mask = (1 << bitsForFirstByte) - 1;
+            assertEquals(0, buffer[1] & ~mask);
+        }
         // and that length is what expected length would look for
         int len = ptr - 1;
-        assertEquals(len, VInt.lengthForUnsigned(value, BITS_FOR_FIRST_BYTE));
-        int resultOffset = VInt.bytesToUnsigned(BITS_FOR_FIRST_BYTE, buffer, 1, resultLong);
+        assertEquals(len, VInt.lengthForUnsigned(value, bitsForFirstByte));
+        int resultOffset = VInt.bytesToUnsigned(bitsForFirstByte, buffer, 1, resultLong);
         assertEquals(ptr, resultOffset);
         assertEquals(value, resultLong[0]);
     }
