@@ -56,6 +56,11 @@ public class VIntTest
         for (long value = 0x3; value != -1L; value = (value << 1) + 1) {
             _assertRoundtrip(value, bitsInFirstByte);
         }
+
+        // Plus just a slightly bigger contiguous range, for fun
+        for (long value = 4; value <= 0xFFFFL; ++value) {
+            _assertRoundtrip(value, bitsInFirstByte);            
+        }
     }
 
     private void _assertRoundtrip(long value, int bitsForFirstByte)

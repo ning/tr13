@@ -310,11 +310,12 @@ public abstract class ClosedNode
         {
             long contentLen = lengthOfContent();
             // first simple length indicator
-            int ptr = VInt.unsignedToBytes(contentLen, 6, tmpBuf, 0);
+            int ptr = VInt.unsignedToBytes(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES, tmpBuf, 0);
             _addTypeBits(tmpBuf, 0);
             out.write(tmpBuf, 0, ptr);
             // then children
             for (ClosedNode n : _children) {
+                out.write(n.nextByte());
                 n.serializeTo(out, tmpBuf);
             }
         }
@@ -385,7 +386,7 @@ public abstract class ClosedNode
 
         public int serialize(byte[] result, int offset)
         {
-            long contentLen = length();
+            long contentLen = lengthOfContent();
             // First: serialize length indicator
             int origOffset = offset;
             offset = VInt.unsignedToBytes(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES, result, offset);
@@ -393,6 +394,7 @@ public abstract class ClosedNode
             // Then value for this node
             offset = VInt.unsignedToBytes(_value, 8, result, offset);
             offset = serializeChildren(result, offset);
+            if ((origOffset + length()) != offset) throw new IllegalStateException("Internal error: ValueBranch expected length wrong");
             return offset;
         }
 
@@ -407,6 +409,7 @@ public abstract class ClosedNode
             out.write(tmpBuf, 0, VInt.unsignedToBytes(_value, 8, tmpBuf, 0));
             // then children
             for (ClosedNode n : _children) {
+                out.write(n.nextByte());
                 n.serializeTo(out, tmpBuf);
             }
         }
