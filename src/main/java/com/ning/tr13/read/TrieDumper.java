@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 import com.ning.tr13.KeyValueReader;
 import com.ning.tr13.TrieConstants;
+import com.ning.tr13.util.InputUtil;
 import com.ning.tr13.util.VInt;
 
 /**
@@ -28,21 +29,16 @@ public class TrieDumper
     public void dump(InputStream in, OutputStream out) throws IOException
     {
         // header:
-        byte[] header = new byte[16];
-        readFully(in, header);
-        // First: let's verify signature
-        for (int i = 0, len = HEADER_TEMPLATE.length; i < len; ++i) {
-            if (header[i] != HEADER_TEMPLATE[i]) {
-                throw new IOException("Malformed input: no valid trie header found (first 8 bytes)");
-            }
-        }
-
-        long len = header[8];
-        for (int i = 9; i < 16; ++i) {
-            len = (len << 8) | (header[i] & 0xFF);
+        byte[] buffer = new byte[TrieHeader.HEADER_LENGTH];
+        InputUtil.readFully(in, buffer);
+        // First: let's verify signature, header
+        TrieHeader header = TrieHeader.read(buffer, 0);
+        long len = header.getPayloadLength();
+        if (len > Integer.MAX_VALUE) {
+            throw new IOException("Too big input file (over 2 gigs)");
         }
         byte[] payload = new byte[(int) len];
-        readFully(in, payload);
+        InputUtil.readFully(in, payload);
 
         // Ok, let's traverse then
         byte[] keyBuffer = new byte[200];
@@ -142,18 +138,6 @@ public class TrieDumper
         }
         keyBuffer[keyLen] = nextKeyByte;
         return keyBuffer;
-    }
-    
-    private void readFully(InputStream in, byte[] buffer) throws IOException
-    {
-        int offset = 0;
-        while (offset < buffer.length) {
-            int count = in.read(buffer, offset, buffer.length - offset);
-            if (count < 1) {
-                throw new IllegalArgumentException("Could not read "+buffer.length+" bytes; only got "+offset);
-            }
-            offset += count;
-        }
     }
     
     public static void main(String[] args) throws IOException

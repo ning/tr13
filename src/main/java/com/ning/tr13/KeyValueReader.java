@@ -22,6 +22,8 @@ public class KeyValueReader
     protected int _lineNumber;
     
     protected long _value;
+
+    protected boolean _closeWhenDone = false;
     
     public KeyValueReader(InputStream in) throws IOException
     {
@@ -34,6 +36,10 @@ public class KeyValueReader
         _separatorChar = sepChar;
     }
 
+    public void setCloseWhenDone(boolean b) {
+        _closeWhenDone = b;
+    }
+    
     public void close() throws IOException {
         _reader.close();
     }
@@ -63,6 +69,9 @@ public class KeyValueReader
             throw new IOException("Invalid line #"+_lineNumber+": '"+line+"'");
         }
         _value = 0L;
+        if (_closeWhenDone) {
+            close();
+        }
         return null;
     }
 }

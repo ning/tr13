@@ -1,5 +1,7 @@
 package com.ning.tr13.util;
 
+import java.nio.ByteBuffer;
+
 /**
  * Helper class for dealing with Variable-length integers (VInts).
  * Encoding uses big-endian (most-significant byte first) ordering;
@@ -149,6 +151,51 @@ public class VInt
         while (true) {
             l <<= 7;
             b = buffer[offset++];
+            if (b < 0) { // last byte
+                resultBuffer[0] = l | (b & 0x7F);
+                return offset;
+            }
+            l |= b;
+        }
+    }
+
+    public static int bytesToUnsigned(int bitsForFirstByte, ByteBuffer buffer, int offset,
+            long[] resultBuffer)
+    {
+        // Ok: first byte has N bits, of which MSB indicates if it's the last byte to use:
+        int value = buffer.get(offset++) & ((1 << bitsForFirstByte) - 1);
+        bitsForFirstByte--;
+        int marker = (1 << bitsForFirstByte);
+        if ((value & marker) != 0) { // if we have MSB set, it means 'last byte'
+            value ^= marker;
+            resultBuffer[0] = value;
+            return offset;
+        }
+        value <<= 7;
+        // Otherwise we'll just get N LSB
+        int b = buffer.get(offset++);
+        if (b < 0) { // 2 bytes
+            resultBuffer[0] = value | (b & 0x7F);
+            return offset;
+        }
+        value = (value | b) << 7;
+        b = buffer.get(offset++);
+        if (b < 0) { // 3 bytes
+            resultBuffer[0] = value | (b & 0x7F);
+            return offset;
+        }
+        value = (value | b) << 7;
+        b = buffer.get(offset++);
+        if (b < 0) { // 4 bytes
+            resultBuffer[0] = value | (b & 0x7F);
+            return offset;
+        }
+        value = (value | b);
+        // At this point we must 'upgrade' to long; can just loop
+        long l = (long) value;
+        while (true) {
+            l <<= 7;
+            b = buffer.get(offset++);
             if (b < 0) { // last byte
                 resultBuffer[0] = l | (b & 0x7F);
                 return offset;

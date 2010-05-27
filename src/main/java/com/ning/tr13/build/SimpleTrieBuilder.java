@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import com.ning.tr13.KeyValueReader;
 import com.ning.tr13.TrieBuilder;
 import com.ning.tr13.TrieNode;
+import com.ning.tr13.read.TrieHeader;
 
 /**
  * Straight-forward builder implementation that reads data using
@@ -40,18 +41,12 @@ public class SimpleTrieBuilder
          * or leaf node.
          */
         byte[] tmpBuffer = new byte[ClosedNode.MINIMUM_TEMP_BUFFER_LENGTH];
-        // first things first: tr13 header:
-        System.arraycopy(HEADER_TEMPLATE, 0, tmpBuffer, 0, 8);
         // currently it is constant; in future will need to add bitflags etc:
         TrieNode root = build();
-        // ok; now we now total payload length, write it out:
-        long len = root.length();
-        System.out.println("Payload length: "+len);
-        for (int i = 15; i >= 8; --i) {
-            tmpBuffer[i] = (byte) len;
-            len >>= 8;
-        }        
-        out.write(tmpBuffer, 0, 16);
+        System.out.println("Payload length: "+root.length());
+        // first things first: tr13 header:
+        int headerLen = TrieHeader.fillHeaderInfo(tmpBuffer, root.length());
+        out.write(tmpBuffer, 0, headerLen);
         // and then serialize the trie payload
         root.serializeTo(out, tmpBuffer);
         System.out.println("Completed.");
