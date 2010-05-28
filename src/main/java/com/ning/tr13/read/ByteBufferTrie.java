@@ -57,30 +57,96 @@ public class ByteBufferTrie extends TrieLookup
     private Path _findValue(Path path, int ptr)
     {
         final ByteBuffer bb = _byteBuffer;
-        byte b = bb.get(ptr);
 
-        int type = (b >> 6) & 0x03;
-        switch (type) {
-        case TrieConstants.TYPE_LEAF_SIMPLE:
-            // Only matches if we are at the end
-            if (path.endOfKey()) {
-                VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
+        main_loop:
+
+        while (true) {
+            int type = (bb.get(ptr) >> 6) & 0x03;
+            if (type == TrieConstants.TYPE_LEAF_SIMPLE) {
+                // Only matches if we are at the end
+                if (path.endOfKey()) {
+                    VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
+                            bb, ptr, path.longHolder);
+                    path.setValue(path.longHolder[0]);
+                    return path;
+                }
+                return null;
+            }
+            if (type == TrieConstants.TYPE_LEAF_WITH_SUFFIX) {
+                // First we get value, as with regular leaves
+                ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
                         bb, ptr, path.longHolder);
                 path.setValue(path.longHolder[0]);
-                return path;
+                // Then length of suffix
+                ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);
+                int suffixLen = (int) path.longHolder[0];
+                if (path.matchKeySuffix(bb, ptr, suffixLen)) {
+                    return path;
+                }
+                return null;
             }
-            return null;
-            
-        case TrieConstants.TYPE_LEAF_WITH_SUFFIX:
-            
-            
-        case TrieConstants.TYPE_BRANCH_SIMPLE:    
-        case TrieConstants.TYPE_BRANCH_WITH_VALUE:
+            // nope: a branch
+            if (type == TrieConstants.TYPE_BRANCH_SIMPLE) {
+                // first things first: if key ended, can't match:
+                if (path.endOfKey()) {
+                    return null;
+                }
+                // simple branches: first get total length of children; then children
+                ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
+                        bb, ptr, path.longHolder);
+            } else { // branch with value
+                // ok: first thing; does this branch itself match?
+                ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
+                        bb, ptr, path.longHolder);
+                if (path.endOfKey()) {
+                    path.setValue(path.longHolder[0]);
+                    return path;                
+                }
+                ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);
+            }
+            // either way, now know content length; and can loop
+            int end = ptr + (int) path.longHolder[0];
+            do {
+                byte b = bb.get(ptr++);
+                if (!path.matchNextKeyByte(b)) {
+                    ptr = _skipEntry(path, ptr);
+                    continue;
+                }
+                return path;
+            } while (ptr < end);
         }
-
-        return null;
     }
 
+    private int _skipEntry(Path path, int ptr)
+    {
+        final ByteBuffer bb = _byteBuffer;
+        int type = (bb.get(ptr) >> 6) & 0x03;
+        if (type == TrieConstants.TYPE_LEAF_SIMPLE) {
+            ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
+                    bb, ptr, path.longHolder);
+        } else if (type == TrieConstants.TYPE_LEAF_WITH_SUFFIX) {
+            // First we get value, as with regular leaves
+            ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
+                    bb, ptr, path.longHolder);
+            // Then length of suffix
+            ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);
+            int suffixLen = (int) path.longHolder[0];
+            ptr += suffixLen;
+        } else if (type == TrieConstants.TYPE_BRANCH_SIMPLE) {
+            // simple branches: first get total length of children; then children
+            ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
+                    bb, ptr, path.longHolder);
+            ptr += (int) path.longHolder[0];
+        } else { // branch with value
+            // ok: first thing; does this branch itself match?
+            ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
+                    bb, ptr, path.longHolder);
+            ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);
+            ptr += (int) path.longHolder[0];
+        }
+        return ptr;
+    }
+    
     /*
     /**********************************************************
     /* Helper classes
@@ -95,7 +161,6 @@ public class ByteBufferTrie extends TrieLookup
         public final long[] longHolder = new long[1];
 
         private final byte[] key;
-        private final int keyEnd;
         private int keyOffset;
         
         private long value;
@@ -103,7 +168,6 @@ public class ByteBufferTrie extends TrieLookup
         public Path(byte[] key)
         {
             this.key = key;
-            this.keyEnd = key.length-1;
             keyOffset = 0;
         }
 
@@ -114,7 +178,31 @@ public class ByteBufferTrie extends TrieLookup
         public long value() { return value; }
         
         public boolean endOfKey() {
-            return (keyOffset == keyEnd);
+            return (keyOffset == key.length);
+        }
+        
+        public int remainingKeyLength() {
+            return (key.length - keyOffset);
+        }
+
+        public boolean matchKeySuffix(ByteBuffer bb, int offset, int len)
+        {
+            if (len != remainingKeyLength()) return false;
+            for (int i = 0; i < len; ++i) {
+                if (bb.get(offset++) != key[keyOffset++]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public boolean matchNextKeyByte(byte b)
+        {
+            if (key[keyOffset] == b) {
+                ++keyOffset;
+                return true;
+            }
+            return false;
         }
     }
 }

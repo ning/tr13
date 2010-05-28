@@ -10,6 +10,7 @@ import com.ning.tr13.KeyValueReader;
 import com.ning.tr13.TrieBuilder;
 import com.ning.tr13.TrieNode;
 import com.ning.tr13.read.TrieHeader;
+import com.ning.tr13.util.UTF8Codec;
 
 /**
  * Straight-forward builder implementation that reads data using
@@ -65,7 +66,7 @@ public class SimpleTrieBuilder
         while ((idStr = _reader.nextEntry()) != null) {
             long value = _reader.getValue();
             // !!! TODO: parse as bytes to speed up processing
-            byte[] id = idStr.getBytes("UTF-8");
+            byte[] id = UTF8Codec.toUTF8(idStr);
             
             OpenNode curr = root;
             int i = 0;

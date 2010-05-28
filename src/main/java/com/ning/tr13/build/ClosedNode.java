@@ -374,25 +374,26 @@ public abstract class ClosedNode
         {
             long contentLen = lengthOfContent();
             byte[] result = new byte[(int) (contentLen + VInt.lengthForUnsigned(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES))];
-            // First: serialize length indicator
-            int offset = VInt.unsignedToBytes(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES, result, 0);
+            // First: serialize value for this node:
+            int offset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_BRANCHES, result, 0);
             _addTypeBits(result, 0);
-            // Then value for this node
-            offset = VInt.unsignedToBytes(_value, 8, result, offset);
-            // then contents
+            // then length of content (children)
+            offset = VInt.unsignedToBytes(contentLen, 8, result, offset);
+            // and then contents
             offset = serializeChildren(result, offset);
             return result;
         }
 
         public int serialize(byte[] result, int offset)
         {
-            long contentLen = lengthOfContent();
-            // First: serialize length indicator
+            // First: serialize value for this node:
             int origOffset = offset;
-            offset = VInt.unsignedToBytes(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES, result, offset);
+            offset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_BRANCHES, result, offset);
             _addTypeBits(result, origOffset);
-            // Then value for this node
-            offset = VInt.unsignedToBytes(_value, 8, result, offset);
+            // Then length indicator
+            long contentLen = lengthOfContent();
+            offset = VInt.unsignedToBytes(contentLen, 8, result, offset);
+            // and then contents
             offset = serializeChildren(result, offset);
             if ((origOffset + length()) != offset) throw new IllegalStateException("Internal error: ValueBranch expected length wrong");
             return offset;
@@ -400,13 +401,13 @@ public abstract class ClosedNode
 
         public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
         {
-            long contentLen = lengthOfContent();
-            // first simple length indicators
-            int ptr = VInt.unsignedToBytes(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES, tmpBuf, 0);
+            // First: serialize value for this node:
+            out.write(tmpBuf, 0, VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_BRANCHES, tmpBuf, 0));
             _addTypeBits(tmpBuf, 0);
+            // then length indicator for contents
+            long contentLen = lengthOfContent();
+            int ptr = VInt.unsignedToBytes(contentLen, 8, tmpBuf, 0);
             out.write(tmpBuf, 0, ptr);
-            // Then value for this node
-            out.write(tmpBuf, 0, VInt.unsignedToBytes(_value, 8, tmpBuf, 0));
             // then children
             for (ClosedNode n : _children) {
                 out.write(n.nextByte());
