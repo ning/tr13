@@ -77,40 +77,36 @@ public class TrieDumper
         }
 
         // Nope; branch
-        // leaf types have 6 bits in first byte for value
+        // branch types have 6 bits in first byte for value
         int origOffset = offset;
         offset = VInt.bytesToUnsigned(FIRST_BYTE_BITS_FOR_BRANCHES, block, offset, tmpLongValueBuffer);
-        long blockLen = tmpLongValueBuffer[0];
+        long l = tmpLongValueBuffer[0];
+        long blockLen;
+        
+        if ((firstByte & 0x40)  == 0) { // simple branch
+            blockLen = l;
+        } else { // branch with value
+            // first value, then length
+            offset = VInt.bytesToUnsigned(8, block, offset, tmpLongValueBuffer);
+            blockLen = tmpLongValueBuffer[0];
+            // which we need to output first
+            _writeValue(out, keyBuffer, keyLen, l, null, 0, 0);
+        }
         if (blockLen < 0L) { // sanity check
             throw new IOException("Corrupt trie structure: branch had negative block length at index "+origOffset);
         }
         final long end = offset + blockLen;
         origOffset = offset;
-        
-        if ((firstByte & 0x40)  == 0) { // simple branch
-            do {
-                byte nextByte = block[offset++];
-                keyBuffer = _appendKey(keyBuffer, nextByte, keyLen);
-                offset = readAndDump(out, block, offset, keyBuffer, keyLen+1);
-            } while (offset < end);
-            if (offset != end) { // sanity check
-                throw new IOException("Corrupt trie structure: simple branch block declared to extend from "
-                        +origOffset+" to "+(end-1)+"; extended to "+(offset-1));
-            }
-        } else { // branch with value
-            // followed by value, in this case
-            offset = VInt.bytesToUnsigned(8, block, offset, tmpLongValueBuffer);
-            // which we need to output first
-            _writeValue(out, keyBuffer, keyLen, tmpLongValueBuffer[0], null, 0, 0);
-            do {
-                byte nextByte = block[offset++];
-                keyBuffer = _appendKey(keyBuffer, nextByte, keyLen);
-                offset = readAndDump(out, block, offset, keyBuffer, keyLen+1);
-            } while (offset < end);
-            if (offset != end) { // sanity check
-                throw new IOException("Corrupt trie structure: value branch block declared to extend from "
-                        +origOffset+" to "+(end-1)+"; extended to "+(offset-1));
-            }
+        do {
+            byte nextByte = block[offset++];
+            keyBuffer = _appendKey(keyBuffer, nextByte, keyLen);
+            offset = readAndDump(out, block, offset, keyBuffer, keyLen+1);
+        } while (offset < end);
+        if (offset != end) { // sanity check
+            throw new IOException("Corrupt trie structure: "
+                    +(((firstByte & 0x40)  == 0) ? "simple" : "value")
+                    +" branch child block declared to extend from "
+                    +origOffset+" to "+(end-1)+"; extended to "+(offset-1));
         }
         return offset;
     }

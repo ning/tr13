@@ -28,9 +28,12 @@ public class SimpleTrieBuilder
     protected final boolean _diagnostics;
 
     protected int _linesRead;
+
+    public SimpleTrieBuilder(KeyValueReader r) {
+        this(r, false);
+    }
     
-    public SimpleTrieBuilder(KeyValueReader r, boolean diagnostics)
-    {
+    public SimpleTrieBuilder(KeyValueReader r, boolean diagnostics) {
         _reader = r;
         _diagnostics = diagnostics;
     }

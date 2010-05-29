@@ -138,7 +138,7 @@ public class ByteBufferTrie extends TrieLookup
                     bb, ptr, path.longHolder);
             ptr += (int) path.longHolder[0];
         } else { // branch with value
-            // ok: first thing; does this branch itself match?
+            // first value, then length of contents (children) to skip
             ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
                     bb, ptr, path.longHolder);
             ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);

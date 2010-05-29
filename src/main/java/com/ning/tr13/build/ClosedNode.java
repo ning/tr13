@@ -355,25 +355,27 @@ public abstract class ClosedNode
             super(b, kids);
             _value = value;
         }
-    
+
+        @Override
         public long length()
         {
-            // same as with simple branch, plus value; value has all bits to use
-            return super.length() + VInt.lengthForUnsigned(_value, 8);
-        }
-
-        protected long lengthOfContent()
-        {
-            // same as super, plus associated value
-            return super.lengthOfContent() + VInt.lengthForUnsigned(_value, 8);
+            // note: slightly different from super, since we start with value!
+            long len = lengthOfContent();
+            return len + VInt.lengthForUnsigned(_value, FIRST_BYTE_BITS_FOR_BRANCHES)
+                + VInt.lengthForUnsigned(len, 8);
         }
         
+        @Override
         public int typeBits() { return TYPE_BRANCH_WITH_VALUE; }
 
+        @Override
         public byte[] serialize()
         {
             long contentLen = lengthOfContent();
-            byte[] result = new byte[(int) (contentLen + VInt.lengthForUnsigned(contentLen, FIRST_BYTE_BITS_FOR_BRANCHES))];
+            long totalLen = contentLen
+                    + VInt.lengthForUnsigned(_value, FIRST_BYTE_BITS_FOR_BRANCHES)
+                    + VInt.lengthForUnsigned(contentLen, 8);
+            byte[] result = new byte[(int) totalLen];
             // First: serialize value for this node:
             int offset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_BRANCHES, result, 0);
             _addTypeBits(result, 0);
@@ -384,6 +386,7 @@ public abstract class ClosedNode
             return result;
         }
 
+        @Override
         public int serialize(byte[] result, int offset)
         {
             // First: serialize value for this node:
@@ -399,6 +402,7 @@ public abstract class ClosedNode
             return offset;
         }
 
+        @Override
         public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
         {
             // First: serialize value for this node:
