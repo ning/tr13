@@ -19,9 +19,14 @@ public abstract class TrieBuilder
      * (it will be flushed) however.
      * 
      * @param out
+     * @param writeHeader Whether to write trie header before actual data;
+     *  this is needed when loading tries back from a File using
+     *  read methods, but not when directly constructing trie instances.
+     *  
      * @throws IOException
      */
-    public abstract void buildAndWrite(OutputStream out) throws IOException;
+    public abstract void buildAndWrite(OutputStream out, boolean writeHeader)
+        throws IOException;
 
     /**
      * Main build method that will construct full InputCollator and return it as

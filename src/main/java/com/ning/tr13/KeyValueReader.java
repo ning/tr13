@@ -47,7 +47,11 @@ public class KeyValueReader
     public int getLineNumber() { return _lineNumber; }
 
     public long getValue() { return _value; }
-    
+
+    /**
+     * @return Key of next entry, if found; null if none
+     * @throws IOException
+     */
     public String nextEntry() throws IOException
     {
         String line;

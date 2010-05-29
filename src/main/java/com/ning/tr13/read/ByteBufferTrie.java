@@ -39,12 +39,18 @@ public class ByteBufferTrie extends TrieLookup
     }
 
     public long getValue(byte[] key, long defaultValue) {
-        // !!! TBI
+        Path result = _findValue(new Path(key), 0);
+        if (result != null) {
+            return result.value();
+        }
         return defaultValue;
     }
 
     public Long findValue(byte[] key) {
-        // !!! TBI
+        Path result = _findValue(new Path(key), 0);
+        if (result != null) {
+            return Long.valueOf(result.value());
+        }
         return null;
     }
 
@@ -106,14 +112,18 @@ public class ByteBufferTrie extends TrieLookup
             }
             // either way, now know content length; and can loop
             int end = ptr + (int) path.longHolder[0];
+            child_loop:
             do {
                 byte b = bb.get(ptr++);
                 if (!path.matchNextKeyByte(b)) {
                     ptr = _skipEntry(path, ptr);
-                    continue;
+                    continue child_loop;
                 }
-                return path;
+                // match: handle entry
+                continue main_loop;
             } while (ptr < end);
+            // no match?
+            return null;
         }
     }
 
@@ -175,7 +185,9 @@ public class ByteBufferTrie extends TrieLookup
             this.value = value;
         }
         
-        public long value() { return value; }
+        public long value() {
+            return value;
+        }
         
         public boolean endOfKey() {
             return (keyOffset == key.length);

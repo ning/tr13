@@ -25,12 +25,17 @@ public abstract class TrieLookup
     /********************************************************** 
      */
 
-    public static TrieLookup createFromFile(File f) throws IOException
+    /**
+     * Factory method that will read Trie from given file, and construct
+     * an instance that uses direct byte buffer for storing and accessing
+     * raw trie data during lookups.
+     */
+    public static TrieLookup read(File f) throws IOException
     {
-        return createByteBufferBased(f, new DirectByteBufferAllocator());
+        return readByteBufferBased(f, new DirectByteBufferAllocator());
     }
 
-    public static TrieLookup createByteArrayBased(File f)
+    public static TrieLookup readByteArrayBased(File f)
     {
         long len = f.length();
         // note: ByteBuffer only good up to 2 gigs...
@@ -42,7 +47,7 @@ public abstract class TrieLookup
         return null;
     }
     
-    public static TrieLookup createByteBufferBased(File f, ByteBufferAllocator a)
+    public static TrieLookup readByteBufferBased(File f, ByteBufferAllocator a)
         throws IOException
     {
         FileInputStream fis = new FileInputStream(f);        

@@ -38,23 +38,29 @@ public class SimpleTrieBuilder
         _diagnostics = diagnostics;
     }
 
+    /**
+     * Method for building trie in-memory structure, and writing it out
+     * using given output stream.
+     * 
+     * @param out Output stream to write trie structure to
+     */
     @Override
-    public void buildAndWrite(OutputStream out) throws IOException
+    public void buildAndWrite(OutputStream out,
+            boolean writeHeader) throws IOException
     {
-        /* note: temp buffer has to be just big enough to contain basic branch header,
-         * or leaf node.
-         */
-        byte[] tmpBuffer = new byte[ClosedNode.MINIMUM_TEMP_BUFFER_LENGTH];
-        // currently it is constant; in future will need to add bitflags etc:
+        // first, build trie
         TrieNode root = build();
-        System.out.println("Payload length: "+root.length());
-        // first things first: tr13 header:
-        int headerLen = TrieHeader.fillHeaderInfo(tmpBuffer, root.length());
-        out.write(tmpBuffer, 0, headerLen);
+        byte[] tmpBuffer = new byte[ClosedNode.MINIMUM_TEMP_BUFFER_LENGTH];
+        // then write header, if requested
+        if (writeHeader) {
+            // currently it is constant; in future will need to add bitflags etc:
+            System.out.println("Payload length: "+root.length());
+            // first things first: tr13 header:
+            int headerLen = TrieHeader.fillHeaderInfo(tmpBuffer, root.length());
+            out.write(tmpBuffer, 0, headerLen);
+        }
         // and then serialize the trie payload
         root.serializeTo(out, tmpBuffer);
-        System.out.println("Completed.");
-        
         out.flush();
     }
     
@@ -111,7 +117,7 @@ public class SimpleTrieBuilder
         SimpleTrieBuilder b = new SimpleTrieBuilder(r, true);
         File outputFile = new File(args[1]);
         OutputStream out = new FileOutputStream(outputFile);
-        b.buildAndWrite(out);
+        b.buildAndWrite(out, true);
         out.close();
         System.out.println("Build complete: "+b._linesRead+" lines read, result file length is "+(outputFile.length()>>10)+" kB");
     }

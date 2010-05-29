@@ -210,8 +210,6 @@ public abstract class ClosedNode
         extends Leaf
     {
         protected final byte[] _suffix;
-
-        static int count = 0;
         
         protected SuffixLeaf(byte b, long value, byte[] suffix)
         {
