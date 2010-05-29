@@ -3,7 +3,7 @@ package com.ning.tr13;
 import java.io.*;
 
 /**
- * Class that defines abstraction used for reading trie entries
+ * Class that defines abstraction used for reading trie TEST_ENTRIES
  * (from a file or other resource).
  *<p>
  * Currently customization can be done by sub-classing; should

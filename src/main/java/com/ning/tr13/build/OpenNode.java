@@ -5,7 +5,7 @@ import java.util.*;
 
 /**
  * Class that represents currently open node in tree: open meaning that
- * new child entries can be appended.
+ * new child TEST_ENTRIES can be appended.
  */
 public class OpenNode
 {

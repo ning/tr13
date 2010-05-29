@@ -5,8 +5,8 @@ import java.util.*;
 
 /**
  * Simple helper class that can be used to convert a file that has
- * 'String [SEPARATOR-CHAR] String' entries into one with
- * 'String [SEPARATOR-CHAR] minimal-int-id' entries.
+ * 'String [SEPARATOR-CHAR] String' TEST_ENTRIES into one with
+ * 'String [SEPARATOR-CHAR] minimal-int-id' TEST_ENTRIES.
  *<p>
  * TODO: need to be able to access underlying mapping so that actual
  * original mappings can be recovered.

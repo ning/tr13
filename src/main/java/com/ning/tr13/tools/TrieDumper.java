@@ -1,10 +1,11 @@
-package com.ning.tr13.read;
+package com.ning.tr13.tools;
 
 import java.io.*;
 import java.util.Arrays;
 
 import com.ning.tr13.KeyValueReader;
 import com.ning.tr13.TrieConstants;
+import com.ning.tr13.read.TrieHeader;
 import com.ning.tr13.util.InputUtil;
 import com.ning.tr13.util.VInt;
 

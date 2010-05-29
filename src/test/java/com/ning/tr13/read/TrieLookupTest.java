@@ -7,23 +7,43 @@ import java.util.*;
 import com.ning.tr13.*;
 import com.ning.tr13.build.SimpleTrieBuilder;
 
-public class ByteBufferTrieTest
+public class TrieLookupTest
     extends junit.framework.TestCase
 {
-    public void testSimple() throws Exception
-    {
-        Map<String,Number> entries = new LinkedHashMap<String,Number>();
-        entries.put("ab", 10);
-        entries.put("abc", 20);
-        entries.put("abe", 3);
-        entries.put("afgh", 4);
-        entries.put("foo", 5);
+    final static Map<String,Number> TEST_ENTRIES = new LinkedHashMap<String,Number>();
+    static {
+        TEST_ENTRIES.put("ab", 10);
+        TEST_ENTRIES.put("abc", 20);
+        TEST_ENTRIES.put("abe", 3);
+        TEST_ENTRIES.put("afgh", 4);
+        TEST_ENTRIES.put("foo", 5);
+    }
 
+    public void testSimpleWiteByteBuffer() throws Exception
+    {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new SimpleTrieBuilder(new MapReader(entries)).buildAndWrite(out, false);
+        new SimpleTrieBuilder(new MapReader(TEST_ENTRIES)).buildAndWrite(out, false);
         byte[] raw = out.toByteArray();
-        ByteBufferTrie trie = new ByteBufferTrie(ByteBuffer.wrap(raw), raw.length);
-        for (Map.Entry<String,Number> entry : entries.entrySet()) {
+        _testSimple(new ByteBufferTrie(ByteBuffer.wrap(raw), raw.length));
+    }
+
+    public void testSimpleWiteByteArray() throws Exception
+    {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        new SimpleTrieBuilder(new MapReader(TEST_ENTRIES)).buildAndWrite(out, false);
+        byte[] raw = out.toByteArray();
+        _testSimple(new ByteArrayTrie(raw));
+    }
+
+    /*
+    /**********************************************************
+    /* Helper methods
+    /**********************************************************
+     */
+
+    private void _testSimple(TrieLookup trie) throws Exception
+    {
+        for (Map.Entry<String,Number> entry : TEST_ENTRIES.entrySet()) {
             long value = entry.getValue().longValue();
             assertEquals(value, trie.getValue(entry.getKey().getBytes("UTF-8")));
         }
