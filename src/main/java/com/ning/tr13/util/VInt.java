@@ -204,6 +204,57 @@ public class VInt
         }
     }
 
+    /**
+     * Method similar to {@link #bytesToUnsigned}, but just skips VInt.
+     */
+    public static int skipUnsigned(int bitsForFirstByte, byte[] buffer, int offset)
+    {
+        // Ok: first byte has N bits, of which MSB indicates if it's the last byte to use:
+        int value = buffer[offset++] & ((1 << bitsForFirstByte) - 1);
+        bitsForFirstByte--;
+        if ((value & (1 << bitsForFirstByte)) != 0) { // if we have MSB set, it means 'last byte'
+            return offset;
+        }
+        value <<= 7;
+        // Otherwise we'll just get N LSB
+        if (buffer[offset++] < 0) { // 2 bytes
+            return offset;
+        }
+        if (buffer[offset++] < 0) { // 3 bytes
+            return offset;
+        }
+        if (buffer[offset++] < 0) { // 4 bytes
+            return offset;
+        }
+        // At this point we must 'upgrade' to long; can just loop
+        while (buffer[offset++] >= 0) { }
+        return offset;
+    }
+
+    public static int skipUnsigned(int bitsForFirstByte, ByteBuffer buffer, int offset)
+    {
+        // Ok: first byte has N bits, of which MSB indicates if it's the last byte to use:
+        int value = buffer.get(offset++) & ((1 << bitsForFirstByte) - 1);
+        bitsForFirstByte--;
+        if ((value & (1 << bitsForFirstByte)) != 0) { // if we have MSB set, it means 'last byte'
+            return offset;
+        }
+        value <<= 7;
+        // Otherwise we'll just get N LSB
+        if (buffer.get(offset++) < 0) { // 2 bytes
+            return offset;
+        }
+        if (buffer.get(offset++) < 0) { // 3 bytes
+            return offset;
+        }
+        if (buffer.get(offset++) < 0) { // 4 bytes
+            return offset;
+        }
+        // At this point we must 'upgrade' to long; can just loop
+        while (buffer.get(offset++) >= 0) { }
+        return offset;
+    }
+    
     /*
     /**********************************************************
     /* Helper methods

@@ -14,7 +14,7 @@ public class SpeedTest
     /**
      * We'll sample key set, take and use every Nth entry...
      */
-    public final static int KEY_SAMPLING_RATIO = 13;
+    public final static int KEY_SAMPLING_RATIO = 39;
     
     private final KeyEntry[] entries;
     
@@ -87,9 +87,12 @@ public class SpeedTest
         KeyValueReader kr = new KeyValueReader(f);
         TrieNode root = new SimpleTrieBuilder(kr).build();     
         byte[] rawTrie = root.serialize();
+        root = null; // need to be GCed for bigger tries..
         TrieLookup arrayBased = new ByteArrayTrie(rawTrie);
         ByteBuffer buffer = ByteBuffer.allocateDirect((int) rawTrie.length);
+        System.out.println("ByteBuffer: is-direct? "+buffer.isDirect());
         buffer.put(rawTrie);
+
         TrieLookup bufferBased = new ByteBufferTrie(buffer, rawTrie.length);
         SpeedTest test = new SpeedTest(entries);
         for (int i = 0; true; ++i) {

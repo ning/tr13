@@ -132,12 +132,11 @@ public class ByteBufferTrie extends TrieLookup
         final ByteBuffer bb = _byteBuffer;
         int type = (bb.get(ptr) >> 6) & 0x03;
         if (type == TrieConstants.TYPE_LEAF_SIMPLE) {
-            ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
-                    bb, ptr, path.longHolder);
+            ptr = VInt.skipUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES, bb, ptr);
         } else if (type == TrieConstants.TYPE_LEAF_WITH_SUFFIX) {
             // First we get value, as with regular leaves
-            ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
-                    bb, ptr, path.longHolder);
+            ptr = VInt.skipUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
+                    bb, ptr);
             // Then length of suffix
             ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);
             int suffixLen = (int) path.longHolder[0];
@@ -149,8 +148,8 @@ public class ByteBufferTrie extends TrieLookup
             ptr += (int) path.longHolder[0];
         } else { // branch with value
             // first value, then length of contents (children) to skip
-            ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
-                    bb, ptr, path.longHolder);
+            ptr = VInt.skipUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
+                    bb, ptr);
             ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);
             ptr += (int) path.longHolder[0];
         }
