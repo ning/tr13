@@ -20,6 +20,16 @@ public interface TrieNode
      * Serialization method that will serialize contents into given
      * output stream, possibly using given buffer (to avoid additional
      * memory allocations).
+     * Note that result does not include Trie header
+     * that is generally need to read the trie back.
      */
     public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException;
+
+    /**
+     * Serialization method that will serialize contents into a byte buffer
+     * with exact size needed to hold the contents.
+     * Note that result does not include Trie header
+     * that is generally need to read the trie back.
+     */
+    public byte[] serialize();
 }

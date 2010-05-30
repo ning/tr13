@@ -45,8 +45,8 @@ public class SimpleTrieBuilder
      * @param out Output stream to write trie structure to
      */
     @Override
-    public void buildAndWrite(OutputStream out,
-            boolean writeHeader) throws IOException
+    public void buildAndWrite(OutputStream out, boolean writeHeader)
+        throws IOException
     {
         // first, build trie
         TrieNode root = build();

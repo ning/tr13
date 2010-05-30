@@ -24,6 +24,12 @@ public class KeyValueReader
     protected long _value;
 
     protected boolean _closeWhenDone = false;
+
+    public KeyValueReader(File f) throws IOException
+    {
+        this(new FileInputStream(f));
+        _closeWhenDone = true;
+    }
     
     public KeyValueReader(InputStream in) throws IOException
     {

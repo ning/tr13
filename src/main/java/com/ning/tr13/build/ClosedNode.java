@@ -138,13 +138,16 @@ public abstract class ClosedNode
         @Override
         public int typeBits() { return 0; }
     
+        @Override
         public byte[] serialize() { return _data; }
+
         public int serialize(byte[] result, int offset) {
             int len = _data.length;
             System.arraycopy(_data, 0, result, offset, len);
             return offset+len;
         }
 
+        @Override
         public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
         {
             out.write(_data);
