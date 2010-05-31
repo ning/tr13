@@ -85,9 +85,13 @@ public class SpeedTest
         // Then build tries
         System.out.println("Building raw trie data...");
         KeyValueReader kr = new KeyValueReader(f);
-        TrieNode root = new SimpleTrieBuilder(kr).build();     
-        byte[] rawTrie = root.serialize();
-        root = null; // need to be GCed for bigger tries..
+        SimpleTrieBuilder b = new SimpleTrieBuilder(kr);
+        // To re-order or not? Reordering increases speed by ~10%:
+        final boolean REORDER = true;
+        System.out.println("Reorder entries: "+REORDER);
+        b.setReorderEntries(REORDER);
+        byte[] rawTrie = b.build().serialize();
+        b = null; // just ensure we can GC interemediate stuff
         TrieLookup arrayBased = new ByteArrayTrie(rawTrie);
         ByteBuffer buffer = ByteBuffer.allocateDirect((int) rawTrie.length);
         System.out.println("ByteBuffer: is-direct? "+buffer.isDirect());

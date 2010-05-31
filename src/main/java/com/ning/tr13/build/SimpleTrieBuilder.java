@@ -29,6 +29,15 @@ public class SimpleTrieBuilder
 
     protected int _linesRead;
 
+    /**
+     * Whether builder is allowed to reorder entries for branch
+     * nodes. If true, builder can (and will) reorder entries so that
+     * biggest entries come first; this since it should improve average
+     * access time. If false, entries will be written in exact order
+     * they have been added in.
+     */
+    protected boolean _reorderEntries;
+    
     public SimpleTrieBuilder(KeyValueReader r) {
         this(r, false);
     }
@@ -38,6 +47,11 @@ public class SimpleTrieBuilder
         _diagnostics = diagnostics;
     }
 
+    public SimpleTrieBuilder setReorderEntries(boolean b) {
+        _reorderEntries = b;
+        return this;
+    }
+    
     /**
      * Method for building trie in-memory structure, and writing it out
      * using given output stream.
@@ -93,7 +107,7 @@ public class SimpleTrieBuilder
             for (int last = id.length-1; i <= last; ++i) {
                 OpenNode next = new OpenNode(id[i],
                         (i == last) ? Long.valueOf(value) : null);
-                curr.addNode(next);
+                curr.addNode(next, _reorderEntries);
                 curr = next;
             }
 
@@ -104,7 +118,7 @@ public class SimpleTrieBuilder
             }
         }
         _linesRead = count;        
-        return root.close();
+        return root.close(_reorderEntries);
     }
 
     public static void main(String[] args) throws Exception

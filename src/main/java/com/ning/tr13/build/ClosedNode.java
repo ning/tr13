@@ -14,7 +14,7 @@ import com.ning.tr13.util.VInt;
  */
 public abstract class ClosedNode
     extends TrieConstants
-    implements TrieNode
+    implements TrieNode, Comparable<ClosedNode>
 {
     /**
      * This constants is used as safe minimum size for temporary
@@ -105,6 +105,20 @@ public abstract class ClosedNode
     {
         int i = buffer[offset];
         buffer[offset] = (byte) (i | (typeBits() << 6));
+    }
+
+    @Override
+    public int compareTo(ClosedNode o)
+    {
+        // sort bigger children before shorter ones
+        long diff = this.length() - o.length();
+        if (diff < 0L) {
+            return 1;
+        }
+        if (diff > 0L) {
+            return -1;
+        }
+        return 0;
     }
     
     /*

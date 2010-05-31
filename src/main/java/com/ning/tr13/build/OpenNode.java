@@ -57,13 +57,13 @@ public class OpenNode
      * Main mutation method used to close currently open child node
      * (if any), and optional start a new open child node.
      */
-    public void addNode(OpenNode n)
+    public void addNode(OpenNode n, boolean canReorder)
     {
         if (_currentChild != null) {
             if (_closedChildren == null) {
                 _closedChildren = new ArrayList<ClosedNode>(2);
             }
-            _closedChildren.add(_currentChild.close());
+            _closedChildren.add(_currentChild.close(canReorder));
         }
         _currentChild = n;
     }
@@ -75,14 +75,14 @@ public class OpenNode
      * @return Closed node that represents this node once it is not open
      *   to changes
      */
-    public ClosedNode close()
+    public ClosedNode close(boolean canReorder)
     {
         // first: is this a leaf?
         if (_currentChild == null) { // yes
             return ClosedNode.simpleLeaf(_nodeByte, _nodeValue);
         }
         // or only has a leaf as child?
-        ClosedNode lastKid = _currentChild.close();
+        ClosedNode lastKid = _currentChild.close(canReorder);
         ClosedNode[] closedKids;
         if (_closedChildren == null) {
             if (lastKid.isLeaf() && !_hasValue) {
@@ -94,6 +94,9 @@ public class OpenNode
             closedKids = new ClosedNode[_closedChildren.size()+1];
             _closedChildren.toArray(closedKids);
             closedKids[_closedChildren.size()] = lastKid;
+            if (canReorder) {
+                optimizeChildOrder(closedKids);
+            }
         }
         // ok, branch. Value?
         ClosedNode branch;
@@ -108,5 +111,17 @@ public class OpenNode
             branch = ClosedNode.serialized(branch);
         }
         return branch;
+    }
+
+    /**
+     * Helper method that will try to reorder kids so that the biggest child
+     * entries are ordered before smaller ones: the idea is that this should
+     * reduce lookups for most likely target nodes (assuming uniform access
+     * pattern)
+     */
+    private void optimizeChildOrder(ClosedNode[] kids)
+    {
+        // natural ordering works for ClosedNode
+        Arrays.sort(kids);
     }
 }
