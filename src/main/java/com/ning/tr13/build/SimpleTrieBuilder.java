@@ -8,8 +8,7 @@ import java.io.OutputStream;
 
 import com.ning.tr13.KeyValueReader;
 import com.ning.tr13.TrieBuilder;
-import com.ning.tr13.TrieNode;
-import com.ning.tr13.read.TrieHeader;
+import com.ning.tr13.lookup.TrieHeader;
 import com.ning.tr13.util.UTF8Codec;
 
 /**
@@ -64,7 +63,7 @@ public class SimpleTrieBuilder
     {
         // first, build trie
         TrieNode root = build();
-        byte[] tmpBuffer = new byte[ClosedNode.MINIMUM_TEMP_BUFFER_LENGTH];
+        byte[] tmpBuffer = new byte[ClosedTrieNode.MINIMUM_TEMP_BUFFER_LENGTH];
         // then write header, if requested
         if (writeHeader) {
             // currently it is constant; in future will need to add bitflags etc:
@@ -81,7 +80,7 @@ public class SimpleTrieBuilder
     @Override
     public TrieNode build() throws IOException
     {
-        OpenNode root = new OpenNode((byte) 0, null);
+        OpenTrieNode root = new OpenTrieNode((byte) 0, null);
         String idStr;
 
         int count = 0;
@@ -91,11 +90,11 @@ public class SimpleTrieBuilder
             // !!! TODO: parse as bytes to speed up processing
             byte[] id = UTF8Codec.toUTF8(idStr);
             
-            OpenNode curr = root;
+            OpenTrieNode curr = root;
             int i = 0;
             // first, skip out common ancestry
             while (true) {
-                OpenNode next = curr.getCurrentChild();
+                OpenTrieNode next = curr.getCurrentChild();
                 if (next == null || next.getNodeByte() != id[i]) break;
                 if (++i >= id.length) { // sanity check, could skip, but better safe than sorry
                     throw new IllegalArgumentException("Malformed input, line "
@@ -105,7 +104,7 @@ public class SimpleTrieBuilder
             }
             // then attach to where we diverge
             for (int last = id.length-1; i <= last; ++i) {
-                OpenNode next = new OpenNode(id[i],
+                OpenTrieNode next = new OpenTrieNode(id[i],
                         (i == last) ? Long.valueOf(value) : null);
                 curr.addNode(next, _reorderEntries);
                 curr = next;

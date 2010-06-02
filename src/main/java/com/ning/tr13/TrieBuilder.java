@@ -2,6 +2,8 @@ package com.ning.tr13;
 
 import java.io.*;
 
+import com.ning.tr13.build.TrieNode;
+
 /**
  * Definition of interface for classes that can build trie structure.
  * 
@@ -30,7 +32,7 @@ public abstract class TrieBuilder
 
     /**
      * Main build method that will construct full InputCollator and return it as
-     * a {@link ClosedNode} instance, which can be simply serialized
+     * a {@link ClosedTrieNode} instance, which can be simply serialized
      * to an {@link OutputStream}
      * 
      * @return Root node

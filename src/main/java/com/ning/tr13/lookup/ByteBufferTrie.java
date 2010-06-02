@@ -1,20 +1,27 @@
-package com.ning.tr13.read;
+package com.ning.tr13.lookup;
 
+import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
 import com.ning.tr13.TrieConstants;
 import com.ning.tr13.TrieLookup;
 import com.ning.tr13.util.VInt;
 
-public class ByteArrayTrie extends TrieLookup
+public class ByteBufferTrie extends TrieLookup
 {
     /**
      * Buffer that contains raw trie data.
      */
-    protected final byte[] _byteArray;
+    protected final ByteBuffer _byteBuffer;
 
-    public ByteArrayTrie(byte[] raw) {
-        _byteArray = raw;
+    /**
+     * Number of bytes in {@link #_byteArray}
+     */
+    protected final int _size;
+
+    public ByteBufferTrie(ByteBuffer bb, int size) {
+        _byteBuffer = bb;
+        _size = size;
     }
 
     /*
@@ -55,15 +62,17 @@ public class ByteArrayTrie extends TrieLookup
 
     private Path _findValue(Path path, int ptr)
     {
+        final ByteBuffer bb = _byteBuffer;
+
         main_loop:
 
         while (true) {
-            int type = (_byteArray[ptr] >> 6) & 0x03;
+            int type = (bb.get(ptr) >> 6) & 0x03;
             if (type == TrieConstants.TYPE_LEAF_SIMPLE) {
                 // Only matches if we are at the end
                 if (path.endOfKey()) {
                     VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
-                            _byteArray, ptr, path.longHolder);
+                            bb, ptr, path.longHolder);
                     path.setValue(path.longHolder[0]);
                     return path;
                 }
@@ -72,12 +81,12 @@ public class ByteArrayTrie extends TrieLookup
             if (type == TrieConstants.TYPE_LEAF_WITH_SUFFIX) {
                 // First we get value, as with regular leaves
                 ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
-                        _byteArray, ptr, path.longHolder);
+                        bb, ptr, path.longHolder);
                 path.setValue(path.longHolder[0]);
                 // Then length of suffix
-                ptr = VInt.bytesToUnsigned(8, _byteArray, ptr, path.longHolder);
+                ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);
                 int suffixLen = (int) path.longHolder[0];
-                if (path.matchKeySuffix(_byteArray, ptr, suffixLen)) {
+                if (path.matchKeySuffix(bb, ptr, suffixLen)) {
                     return path;
                 }
                 return null;
@@ -90,22 +99,22 @@ public class ByteArrayTrie extends TrieLookup
                 }
                 // simple branches: first get total length of children; then children
                 ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
-                        _byteArray, ptr, path.longHolder);
+                        bb, ptr, path.longHolder);
             } else { // branch with value
                 // ok: first thing; does this branch itself match?
                 ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
-                        _byteArray, ptr, path.longHolder);
+                        bb, ptr, path.longHolder);
                 if (path.endOfKey()) {
                     path.setValue(path.longHolder[0]);
                     return path;                
                 }
-                ptr = VInt.bytesToUnsigned(8, _byteArray, ptr, path.longHolder);
+                ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);
             }
             // either way, now know content length; and can loop
             int end = ptr + (int) path.longHolder[0];
             child_loop:
             do {
-                byte b = _byteArray[ptr++];
+                byte b = bb.get(ptr++);
                 if (!path.matchNextKeyByte(b)) {
                     ptr = _skipEntry(path, ptr);
                     continue child_loop;
@@ -120,28 +129,28 @@ public class ByteArrayTrie extends TrieLookup
 
     private int _skipEntry(Path path, int ptr)
     {
-        int type = (_byteArray[ptr] >> 6) & 0x03;
+        final ByteBuffer bb = _byteBuffer;
+        int type = (bb.get(ptr) >> 6) & 0x03;
         if (type == TrieConstants.TYPE_LEAF_SIMPLE) {
-            ptr = VInt.skipUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
-                    _byteArray, ptr);
+            ptr = VInt.skipUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES, bb, ptr);
         } else if (type == TrieConstants.TYPE_LEAF_WITH_SUFFIX) {
             // First we get value, as with regular leaves
             ptr = VInt.skipUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
-                    _byteArray, ptr);
+                    bb, ptr);
             // Then length of suffix
-            ptr = VInt.bytesToUnsigned(8, _byteArray, ptr, path.longHolder);
+            ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);
             int suffixLen = (int) path.longHolder[0];
             ptr += suffixLen;
         } else if (type == TrieConstants.TYPE_BRANCH_SIMPLE) {
             // simple branches: first get total length of children; then children
             ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
-                    _byteArray, ptr, path.longHolder);
+                    bb, ptr, path.longHolder);
             ptr += (int) path.longHolder[0];
         } else { // branch with value
             // first value, then length of contents (children) to skip
             ptr = VInt.skipUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_BRANCHES,
-                    _byteArray, ptr);
-            ptr = VInt.bytesToUnsigned(8, _byteArray, ptr, path.longHolder);
+                    bb, ptr);
+            ptr = VInt.bytesToUnsigned(8, bb, ptr, path.longHolder);
             ptr += (int) path.longHolder[0];
         }
         return ptr;
@@ -187,11 +196,11 @@ public class ByteArrayTrie extends TrieLookup
             return (key.length - keyOffset);
         }
 
-        public boolean matchKeySuffix(byte[] byteArray, int offset, int len)
+        public boolean matchKeySuffix(ByteBuffer bb, int offset, int len)
         {
             if (len != remainingKeyLength()) return false;
             for (int i = 0; i < len; ++i) {
-                if (byteArray[offset++] != key[keyOffset++]) {
+                if (bb.get(offset++) != key[keyOffset++]) {
                     return false;
                 }
             }

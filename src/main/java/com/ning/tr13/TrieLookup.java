@@ -4,8 +4,8 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
-import com.ning.tr13.read.ByteBufferTrie;
-import com.ning.tr13.read.TrieHeader;
+import com.ning.tr13.lookup.ByteBufferTrie;
+import com.ning.tr13.lookup.TrieHeader;
 import com.ning.tr13.util.InputUtil;
 
 /**

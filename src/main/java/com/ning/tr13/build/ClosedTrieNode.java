@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import com.ning.tr13.TrieConstants;
-import com.ning.tr13.TrieNode;
 import com.ning.tr13.util.VInt;
 
 /**
@@ -12,9 +11,9 @@ import com.ning.tr13.util.VInt;
  * 
  * @author tatu
  */
-public abstract class ClosedNode
+public abstract class ClosedTrieNode
     extends TrieConstants
-    implements TrieNode, Comparable<ClosedNode>
+    implements TrieNode, Comparable<ClosedTrieNode>
 {
     /**
      * This constants is used as safe minimum size for temporary
@@ -29,7 +28,7 @@ public abstract class ClosedNode
      */
     protected final byte _nextByte;
     
-    protected ClosedNode(byte nb)
+    protected ClosedTrieNode(byte nb)
     {
         _nextByte = nb;
     }
@@ -68,19 +67,19 @@ public abstract class ClosedNode
         return new SimpleLeaf(b, v);
     }
 
-    public static SimpleBranch simpleBranch(byte b, ClosedNode[] kids) {
+    public static SimpleBranch simpleBranch(byte b, ClosedTrieNode[] kids) {
         return new SimpleBranch(b, kids);
     }
 
-    public static BranchWithValue valueBranch(byte b, ClosedNode[] kids, long value) {
+    public static BranchWithValue valueBranch(byte b, ClosedTrieNode[] kids, long value) {
         return new BranchWithValue(b, kids, value);
     }
 
-    public static SerializedNode serialized(ClosedNode node) {
+    public static SerializedNode serialized(ClosedTrieNode node) {
         return new SerializedNode(node._nextByte, node.serialize());
     }
 
-    public static Leaf suffixLeaf(byte b, ClosedNode node)
+    public static Leaf suffixLeaf(byte b, ClosedTrieNode node)
     {
         Leaf leaf = (Leaf) node;
         if (leaf instanceof SimpleLeaf) { // convert into suffix one
@@ -108,7 +107,7 @@ public abstract class ClosedNode
     }
 
     @Override
-    public int compareTo(ClosedNode o)
+    public int compareTo(ClosedTrieNode o)
     {
         // sort bigger children before shorter ones
         long diff = this.length() - o.length();
@@ -133,7 +132,7 @@ public abstract class ClosedNode
      * branch nodes)
      */
     protected final static class SerializedNode
-        extends ClosedNode
+        extends ClosedTrieNode
     {
         protected final byte[] _data;
         
@@ -169,7 +168,7 @@ public abstract class ClosedNode
     }
 
     protected abstract static class Leaf
-        extends ClosedNode
+        extends ClosedTrieNode
     {
         protected final long _value;
 
@@ -279,11 +278,11 @@ public abstract class ClosedNode
      * all contained nodes, and sequence of serialization for nodes.
      */
     protected static class SimpleBranch
-        extends ClosedNode
+        extends ClosedTrieNode
     {
-        protected final ClosedNode[] _children;
+        protected final ClosedTrieNode[] _children;
         
-        protected SimpleBranch(byte b, ClosedNode[] kids) {
+        protected SimpleBranch(byte b, ClosedTrieNode[] kids) {
             super(b);
             _children = kids;
         }
@@ -329,7 +328,7 @@ public abstract class ClosedNode
             _addTypeBits(tmpBuf, 0);
             out.write(tmpBuf, 0, ptr);
             // then children
-            for (ClosedNode n : _children) {
+            for (ClosedTrieNode n : _children) {
                 out.write(n.nextByte());
                 n.serializeTo(out, tmpBuf);
             }
@@ -344,7 +343,7 @@ public abstract class ClosedNode
             // one byte per child for branching:
             long len = (long) _children.length;
             // and then child serializations:
-            for (ClosedNode n : _children) {
+            for (ClosedTrieNode n : _children) {
                 len += n.length();
             }
             return len;
@@ -352,7 +351,7 @@ public abstract class ClosedNode
 
         protected int serializeChildren(byte[] result, int offset)
         {
-            for (ClosedNode n : _children) {
+            for (ClosedTrieNode n : _children) {
                 result[offset++] = n.nextByte();
                 offset = n.serialize(result, offset);                
             }
@@ -365,7 +364,7 @@ public abstract class ClosedNode
     {
         protected final long _value;
         
-        protected BranchWithValue(byte b, ClosedNode[] kids, long value)
+        protected BranchWithValue(byte b, ClosedTrieNode[] kids, long value)
         {
             super(b, kids);
             _value = value;
@@ -428,7 +427,7 @@ public abstract class ClosedNode
             int ptr = VInt.unsignedToBytes(contentLen, 8, tmpBuf, 0);
             out.write(tmpBuf, 0, ptr);
             // then children
-            for (ClosedNode n : _children) {
+            for (ClosedTrieNode n : _children) {
                 out.write(n.nextByte());
                 n.serializeTo(out, tmpBuf);
             }

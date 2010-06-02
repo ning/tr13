@@ -6,6 +6,8 @@ import java.util.*;
 
 import com.ning.tr13.*;
 import com.ning.tr13.build.SimpleTrieBuilder;
+import com.ning.tr13.lookup.ByteArrayTrie;
+import com.ning.tr13.lookup.ByteBufferTrie;
 
 public class TrieLookupTest
     extends junit.framework.TestCase

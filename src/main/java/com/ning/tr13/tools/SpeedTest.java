@@ -6,7 +6,7 @@ import java.util.*;
 
 import com.ning.tr13.*;
 import com.ning.tr13.build.*;
-import com.ning.tr13.read.*;
+import com.ning.tr13.lookup.*;
 import com.ning.tr13.util.UTF8Codec;
 
 public class SpeedTest

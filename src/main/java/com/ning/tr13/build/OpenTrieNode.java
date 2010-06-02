@@ -7,7 +7,7 @@ import java.util.*;
  * Class that represents currently open node in tree: open meaning that
  * new child TEST_ENTRIES can be appended.
  */
-public class OpenNode
+public class OpenTrieNode
 {
     /**
      * For memory usage limitation, we will pre-serialize branches that are
@@ -31,14 +31,14 @@ public class OpenNode
     /**
      * Child nodes that have been completed so far, if any
      */
-    protected ArrayList<ClosedNode> _closedChildren;
+    protected ArrayList<ClosedTrieNode> _closedChildren;
 
     /**
      * Currently open child node, if any.
      */
-    protected OpenNode _currentChild;
+    protected OpenTrieNode _currentChild;
     
-    public OpenNode(byte b, Long value)
+    public OpenTrieNode(byte b, Long value)
     {
         _nodeByte = b;
         if (value == null) {
@@ -51,17 +51,17 @@ public class OpenNode
     }
 
     public byte getNodeByte() { return _nodeByte; }
-    public OpenNode getCurrentChild() { return _currentChild; }
+    public OpenTrieNode getCurrentChild() { return _currentChild; }
     
     /**
      * Main mutation method used to close currently open child node
      * (if any), and optional start a new open child node.
      */
-    public void addNode(OpenNode n, boolean canReorder)
+    public void addNode(OpenTrieNode n, boolean canReorder)
     {
         if (_currentChild != null) {
             if (_closedChildren == null) {
-                _closedChildren = new ArrayList<ClosedNode>(2);
+                _closedChildren = new ArrayList<ClosedTrieNode>(2);
             }
             _closedChildren.add(_currentChild.close(canReorder));
         }
@@ -75,23 +75,23 @@ public class OpenNode
      * @return Closed node that represents this node once it is not open
      *   to changes
      */
-    public ClosedNode close(boolean canReorder)
+    public ClosedTrieNode close(boolean canReorder)
     {
         // first: is this a leaf?
         if (_currentChild == null) { // yes
-            return ClosedNode.simpleLeaf(_nodeByte, _nodeValue);
+            return ClosedTrieNode.simpleLeaf(_nodeByte, _nodeValue);
         }
         // or only has a leaf as child?
-        ClosedNode lastKid = _currentChild.close(canReorder);
-        ClosedNode[] closedKids;
+        ClosedTrieNode lastKid = _currentChild.close(canReorder);
+        ClosedTrieNode[] closedKids;
         if (_closedChildren == null) {
             if (lastKid.isLeaf() && !_hasValue) {
                 // single child which is leaf -> suffix leaf
-                return ClosedNode.suffixLeaf(_nodeByte, lastKid);
+                return ClosedTrieNode.suffixLeaf(_nodeByte, lastKid);
             }
-            closedKids = new ClosedNode[] { lastKid };
+            closedKids = new ClosedTrieNode[] { lastKid };
         } else {
-            closedKids = new ClosedNode[_closedChildren.size()+1];
+            closedKids = new ClosedTrieNode[_closedChildren.size()+1];
             _closedChildren.toArray(closedKids);
             closedKids[_closedChildren.size()] = lastKid;
             if (canReorder) {
@@ -99,16 +99,16 @@ public class OpenNode
             }
         }
         // ok, branch. Value?
-        ClosedNode branch;
+        ClosedTrieNode branch;
         if (_hasValue) {
-            branch = ClosedNode.valueBranch(_nodeByte, closedKids, _nodeValue);
+            branch = ClosedTrieNode.valueBranch(_nodeByte, closedKids, _nodeValue);
         } else {
-            branch = ClosedNode.simpleBranch(_nodeByte, closedKids);
+            branch = ClosedTrieNode.simpleBranch(_nodeByte, closedKids);
 
         }
         // one more thing: big enough to need serialization? (leaves we need not bother with)
         if (branch.length() < MAX_SERIALIZED) {
-            branch = ClosedNode.serialized(branch);
+            branch = ClosedTrieNode.serialized(branch);
         }
         return branch;
     }
@@ -119,9 +119,9 @@ public class OpenNode
      * reduce lookups for most likely target nodes (assuming uniform access
      * pattern)
      */
-    private void optimizeChildOrder(ClosedNode[] kids)
+    private void optimizeChildOrder(ClosedTrieNode[] kids)
     {
-        // natural ordering works for ClosedNode
+        // natural ordering works for ClosedTrieNode
         Arrays.sort(kids);
     }
 }
