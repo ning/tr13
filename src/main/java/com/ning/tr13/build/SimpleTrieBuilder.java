@@ -1,10 +1,12 @@
 package com.ning.tr13.build;
 
 import java.io.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.ning.tr13.KeyValueReader;
 import com.ning.tr13.TrieBuilder;
 import com.ning.tr13.lookup.TrieHeader;
+import com.ning.tr13.util.UTF8Codec;
 
 /**
  * Straight-forward builder implementation that reads data using
@@ -12,7 +14,7 @@ import com.ning.tr13.lookup.TrieHeader;
  * output stream (typical File).
  */
 public abstract class SimpleTrieBuilder<T>
-    extends TrieBuilder
+    extends TrieBuilder<T>
 {
     protected final KeyValueReader<T> _reader;
 
@@ -45,6 +47,9 @@ public abstract class SimpleTrieBuilder<T>
         _reorderEntries = b;
         return this;
     }
+
+    protected abstract ClosedTrieNodeFactory<T> closedTrieNodeFactory();
+    protected abstract OpenTrieNode<T> constructOpenNode(byte b, T value);
     
     /**
      * Method for building trie in-memory structure, and writing it out
@@ -57,7 +62,7 @@ public abstract class SimpleTrieBuilder<T>
         throws IOException
     {
         // first, build trie
-        TrieNode root = build();
+        TrieNode<T> root = build();
         byte[] tmpBuffer = new byte[ClosedTrieNode.MINIMUM_TEMP_BUFFER_LENGTH];
         // then write header, if requested
         if (writeHeader) {
@@ -73,5 +78,41 @@ public abstract class SimpleTrieBuilder<T>
     }
     
     @Override
-    public abstract TrieNode build() throws IOException;
+    public TrieNode<T> build() throws IOException
+    {
+        final OpenTrieNode<T> root = constructOpenNode((byte) 0, null);
+        final boolean diag = _diagnostics;
+        final AtomicInteger count = new AtomicInteger(0);
+        final ClosedTrieNodeFactory<T> nodeFactory = closedTrieNodeFactory();
+
+        _reader.readAll(new KeyValueReader.ValueCallback<T>() {
+            @Override
+            public void handleEntry(byte[] id, T value) {
+                OpenTrieNode<T> curr = root;
+                int i = 0;
+                // first, skip out common ancestry
+                while (true) {
+                    OpenTrieNode<T> next = curr.getCurrentChild();
+                    if (next == null || next.getNodeByte() != id[i]) break;
+                    if (++i >= id.length) { // sanity check, could skip, but better safe than sorry
+                        throw new IllegalArgumentException("Malformed input, line "
+                                +_reader.getLineNumber()+": id '"+UTF8Codec.fromUTF8(id)+"' not properly ordered");
+                    }
+                    curr = next;
+                }
+                // then attach to where we diverge
+                for (int last = id.length-1; i <= last; ++i) {
+                    OpenTrieNode<T> next = constructOpenNode(id[i], (i == last) ? value : null);
+                    curr.addNode(nodeFactory, next, _reorderEntries);
+                    curr = next;
+                }
+                int c = count.addAndGet(1);
+                if (diag && (c & 0xFFFFF) == 0) {
+                    System.out.println("Building: "+(count.get()>>10)+"k lines processed");
+                }
+            }
+        });
+        _linesRead = count.get();    
+        return root.close(nodeFactory, _reorderEntries);
+    }
 }

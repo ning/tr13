@@ -9,7 +9,7 @@ import com.ning.tr13.build.TrieNode;
  * 
  * @author tatu
  */
-public abstract class TrieBuilder
+public abstract class TrieBuilder<T>
     extends TrieConstants
 {
  
@@ -38,5 +38,5 @@ public abstract class TrieBuilder
      * @return Root node
      * @throws IOException
      */
-    public abstract TrieNode build() throws IOException;
+    public abstract TrieNode<T> build() throws IOException;
 }

@@ -2,12 +2,13 @@ package com.ning.tr13.build;
 
 import java.util.*;
 
-
 /**
  * Class that represents currently open node in tree: open meaning that
  * new child TEST_ENTRIES can be appended.
+ * 
+ * @param <T> Value type of nodes
  */
-public class OpenTrieNode
+public class OpenTrieNode<T>
 {
     /**
      * For memory usage limitation, we will pre-serialize branches that are
@@ -19,51 +20,43 @@ public class OpenTrieNode
     /**
      * Value node has, if any
      */
-    protected long _nodeValue;
+    protected T _nodeValue;
 
     /**
      * Byte that leads to this node from parent branch.
      */
     protected byte _nodeByte;
-
-    protected boolean _hasValue;
     
     /**
      * Child nodes that have been completed so far, if any
      */
-    protected ArrayList<ClosedTrieNode> _closedChildren;
+    protected ArrayList<ClosedTrieNode<T>> _closedChildren;
 
     /**
      * Currently open child node, if any.
      */
-    protected OpenTrieNode _currentChild;
+    protected OpenTrieNode<T> _currentChild;
     
-    public OpenTrieNode(byte b, Long value)
+    public OpenTrieNode(byte b, T value)
     {
         _nodeByte = b;
-        if (value == null) {
-            _nodeValue = 0L;
-            _hasValue = false;
-        } else {
-            _nodeValue = value.longValue();
-            _hasValue = true;
-        }
+        _nodeValue = value;
     }
 
     public byte getNodeByte() { return _nodeByte; }
-    public OpenTrieNode getCurrentChild() { return _currentChild; }
+    public OpenTrieNode<T> getCurrentChild() { return _currentChild; }
     
     /**
      * Main mutation method used to close currently open child node
      * (if any), and optional start a new open child node.
      */
-    public void addNode(OpenTrieNode n, boolean canReorder)
+    public void addNode(ClosedTrieNodeFactory<T> nodeFactory, OpenTrieNode<T> n, boolean canReorder)
     {
         if (_currentChild != null) {
             if (_closedChildren == null) {
-                _closedChildren = new ArrayList<ClosedTrieNode>(2);
+                _closedChildren = new ArrayList<ClosedTrieNode<T>>(2);
             }
-            _closedChildren.add(_currentChild.close(canReorder));
+            _closedChildren.add(_currentChild.close(nodeFactory, canReorder));
         }
         _currentChild = n;
     }
@@ -75,19 +68,20 @@ public class OpenTrieNode
      * @return Closed node that represents this node once it is not open
      *   to changes
      */
-    public ClosedTrieNode close(boolean canReorder)
+    @SuppressWarnings("unchecked")
+    public ClosedTrieNode<T> close(ClosedTrieNodeFactory<T> nodeFactory, boolean canReorder)
     {
         // first: is this a leaf?
         if (_currentChild == null) { // yes
-            return ClosedTrieNode.simpleLeaf(_nodeByte, _nodeValue);
+            return nodeFactory.simpleLeaf(_nodeByte, _nodeValue);
         }
         // or only has a leaf as child?
-        ClosedTrieNode lastKid = _currentChild.close(canReorder);
-        ClosedTrieNode[] closedKids;
+        ClosedTrieNode<T> lastKid = _currentChild.close(nodeFactory, canReorder);
+        ClosedTrieNode<T>[] closedKids;
         if (_closedChildren == null) {
-            if (lastKid.isLeaf() && !_hasValue) {
+            if (lastKid.isLeaf() && (_nodeValue == null)) {
                 // single child which is leaf -> suffix leaf
-                return ClosedTrieNode.suffixLeaf(_nodeByte, lastKid);
+                return nodeFactory.suffixLeaf(_nodeByte, lastKid);
             }
             closedKids = new ClosedTrieNode[] { lastKid };
         } else {
@@ -99,16 +93,16 @@ public class OpenTrieNode
             }
         }
         // ok, branch. Value?
-        ClosedTrieNode branch;
-        if (_hasValue) {
-            branch = ClosedTrieNode.valueBranch(_nodeByte, closedKids, _nodeValue);
+        ClosedTrieNode<T> branch;
+        if (_nodeValue != null) {
+            branch = nodeFactory.valueBranch(_nodeByte, closedKids, _nodeValue);
         } else {
-            branch = ClosedTrieNode.simpleBranch(_nodeByte, closedKids);
+            branch = nodeFactory.simpleBranch(_nodeByte, closedKids);
 
         }
         // one more thing: big enough to need serialization? (leaves we need not bother with)
         if (branch.length() < MAX_SERIALIZED) {
-            branch = ClosedTrieNode.serialized(branch);
+            branch = nodeFactory.serialized(branch);
         }
         return branch;
     }
@@ -119,7 +113,7 @@ public class OpenTrieNode
      * reduce lookups for most likely target nodes (assuming uniform access
      * pattern)
      */
-    private void optimizeChildOrder(ClosedTrieNode[] kids)
+    private void optimizeChildOrder(ClosedTrieNode<T>[] kids)
     {
         // natural ordering works for ClosedTrieNode
         Arrays.sort(kids);

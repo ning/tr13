@@ -9,7 +9,7 @@ import java.io.OutputStream;
  * 
  * @author tatu
  */
-public interface TrieNode
+public interface TrieNode<T>
 {
     /**
      * @return Total length of this node, including all of its children
