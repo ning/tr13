@@ -5,9 +5,10 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 import com.ning.tr13.*;
-import com.ning.tr13.build.SimpleTrieBuilder;
+import com.ning.tr13.impl.vint.SimpleVIntTrieBuilder;
 import com.ning.tr13.lookup.ByteArrayTrie;
 import com.ning.tr13.lookup.ByteBufferTrie;
+import com.ning.tr13.util.UTF8Codec;
 
 public class TrieLookupTest
     extends junit.framework.TestCase
@@ -21,18 +22,18 @@ public class TrieLookupTest
         TEST_ENTRIES.put("foo", 5);
     }
 
-    public void testSimpleWiteByteBuffer() throws Exception
+    public void testSimpleUsingByteBuffer() throws Exception
     {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new SimpleTrieBuilder(new MapReader(TEST_ENTRIES)).buildAndWrite(out, false);
+        new SimpleVIntTrieBuilder(new MapReader(TEST_ENTRIES)).buildAndWrite(out, false);
         byte[] raw = out.toByteArray();
         _testSimple(new ByteBufferTrie(ByteBuffer.wrap(raw), raw.length));
     }
 
-    public void testSimpleWiteByteArray() throws Exception
+    public void testSimpleUsingByteArray() throws Exception
     {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new SimpleTrieBuilder(new MapReader(TEST_ENTRIES)).buildAndWrite(out, false);
+        new SimpleVIntTrieBuilder(new MapReader(TEST_ENTRIES)).buildAndWrite(out, false);
         byte[] raw = out.toByteArray();
         _testSimple(new ByteArrayTrie(raw));
     }
@@ -65,26 +66,26 @@ public class TrieLookupTest
      */
 
     private static class MapReader
-        extends KeyValueReader
+        extends KeyValueReader<Long>
     {
-        final Iterator<Map.Entry<String,Number>> _entryIt;
-        Map.Entry<String,Number> _current;
+        final Map<String,Number> _entries;
         
         public MapReader(Map<String,Number> entries) throws IOException        
         {
             super(new ByteArrayInputStream(new byte[0]));
-            _entryIt = entries.entrySet().iterator();
+            _entries = entries;
         }
 
-        public long getValue() { return _current.getValue().longValue(); }
+        @Override
+        protected void parseAndHandle(KeyValueReader.ValueCallback<Long> handler, byte[] key, String value)
+        { }
         
-        public String nextEntry() throws IOException
+        @Override
+        public void readAll(ValueCallback<Long> handler) throws IOException
         {
-            if (_entryIt.hasNext()) {
-                _current = _entryIt.next();
-                return _current.getKey();
+            for (Map.Entry<String,Number> en : _entries.entrySet()) {
+                handler.handleEntry(UTF8Codec.toUTF8(en.getKey()), en.getValue().longValue());
             }
-            return null;
         }
     }
 }

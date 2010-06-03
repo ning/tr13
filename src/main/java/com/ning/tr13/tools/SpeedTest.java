@@ -3,11 +3,11 @@ package com.ning.tr13.tools;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.ning.tr13.*;
-import com.ning.tr13.build.*;
+import com.ning.tr13.impl.vint.*;
 import com.ning.tr13.lookup.*;
-import com.ning.tr13.util.UTF8Codec;
 
 public class SpeedTest
 {
@@ -38,22 +38,23 @@ public class SpeedTest
         return total;
     }
     
-    protected static KeyEntry[] loadKeys(File f, int sampleRatio)
+    protected static KeyEntry[] loadKeys(File f, final int sampleRatio)
         throws IOException
     {
-        KeyValueReader kr = new KeyValueReader(f);
-        ArrayList<KeyEntry> entries = new ArrayList<KeyEntry>();
-        String str;
-        int total = 0;
-        int count = sampleRatio;
-        while ((str = kr.nextEntry()) != null) {
-            ++total;
-            if (--count < 1) {
-                count = sampleRatio;
-                entries.add(new KeyEntry(UTF8Codec.toUTF8(str), kr.getValue()));
+        VIntValueReader kr = new VIntValueReader(f);
+        final ArrayList<KeyEntry> entries = new ArrayList<KeyEntry>();
+        final AtomicInteger total = new AtomicInteger(0);
+        
+        kr.readAll(new KeyValueReader.ValueCallback<Long>() {
+            @Override
+            public void handleEntry(byte[] key, Long value) {
+                int count = total.addAndGet(1);
+                if ((count % sampleRatio) == 0) {
+                    entries.add(new KeyEntry(key, value));
+                }
             }
-        }
-        System.out.println("Read "+(total>>10)+"k entries, sampled "+(entries.size()>>10)+"k.");
+        });
+        System.out.println("Read "+(total.get()>>10)+"k entries, sampled "+(entries.size()>>10)+"k.");
         return entries.toArray(new KeyEntry[entries.size()]);
     }
 
@@ -84,8 +85,8 @@ public class SpeedTest
         KeyEntry[] entries = shuffleEntries(loadKeys(f, KEY_SAMPLING_RATIO));
         // Then build tries
         System.out.println("Building raw trie data...");
-        KeyValueReader kr = new KeyValueReader(f);
-        SimpleTrieBuilder b = new SimpleTrieBuilder(kr);
+        VIntValueReader kr = new VIntValueReader(f);
+        SimpleVIntTrieBuilder b = new SimpleVIntTrieBuilder(kr);
         // To re-order or not? Reordering increases speed by ~10%:
         final boolean REORDER = true;
         System.out.println("Reorder entries: "+REORDER);

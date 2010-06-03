@@ -1,10 +1,6 @@
 package com.ning.tr13;
 
-import java.io.*;
 import java.util.NoSuchElementException;
-
-import com.ning.tr13.lookup.TrieHeader;
-import com.ning.tr13.util.InputUtil;
 
 /**
  * Class used for reading persistent trie structure, and accessing values it

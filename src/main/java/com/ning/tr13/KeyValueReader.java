@@ -2,6 +2,8 @@ package com.ning.tr13;
 
 import java.io.*;
 
+import com.ning.tr13.util.UTF8Codec;
+
 /**
  * Class that defines abstraction used for reading trie TEST_ENTRIES
  * (from a file or other resource).
@@ -11,8 +13,13 @@ import java.io.*;
  * 
  * @author tatu
  */
-public class KeyValueReader
+public abstract class KeyValueReader<T>
 {
+    public interface ValueCallback<V>
+    {
+        public void handleEntry(byte[] key, V value);
+    }
+    
     public final static char DEFAULT_SEPARATOR_CHAR = '|';
     
     protected final BufferedReader _reader;
@@ -20,8 +27,6 @@ public class KeyValueReader
     protected final char _separatorChar;
     
     protected int _lineNumber;
-    
-    protected long _value;
 
     protected boolean _closeWhenDone = false;
 
@@ -52,13 +57,7 @@ public class KeyValueReader
     
     public int getLineNumber() { return _lineNumber; }
 
-    public long getValue() { return _value; }
-
-    /**
-     * @return Key of next entry, if found; null if none
-     * @throws IOException
-     */
-    public String nextEntry() throws IOException
+    public void readAll(ValueCallback<T> handler) throws IOException
     {
         String line;
         
@@ -68,20 +67,17 @@ public class KeyValueReader
             if (line.length() == 0 || line.startsWith("#")) continue;
             int ix = line.indexOf(_separatorChar);
             if (ix > 0) {
+                // !!! TODO: optimize
                 String id = line.substring(0, ix);
-                try {
-                    _value = Long.parseLong(line.substring(ix+1).trim());
-                    return id;
-                } catch (NumberFormatException e) {
-                    ; // will error out below
-                }
+                byte[] key = UTF8Codec.toUTF8(id);
+                parseAndHandle(handler, key, line.substring(ix+1).trim());
             }
-            throw new IOException("Invalid line #"+_lineNumber+": '"+line+"'");
         }
-        _value = 0L;
         if (_closeWhenDone) {
             close();
         }
-        return null;
     }
+
+    protected abstract void parseAndHandle(ValueCallback<T> handler, byte[] key, String value)
+        throws IOException;
 }
