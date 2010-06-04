@@ -7,9 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.ning.tr13.*;
 import com.ning.tr13.impl.vint.*;
-import com.ning.tr13.lookup.*;
 
-public class SpeedTest
+public class VIntSpeedTest
 {
     /**
      * We'll sample key set, take and use every Nth entry...
@@ -18,18 +17,18 @@ public class SpeedTest
     
     private final KeyEntry[] entries;
     
-    public SpeedTest(KeyEntry[] entries)
+    public VIntSpeedTest(KeyEntry[] entries)
     {
         this.entries = entries;
     }
 
-    public long test(TrieLookup lookup)
+    public long test(TrieLookup<Long> lookup)
     {
         long total = 0L;
         for (int i = 0, len = entries.length; i < len; ++i) {
             KeyEntry entry = entries[i];
-            long value = lookup.getValue(entry.rawKey);
-            if (value != entry.value) {
+            Long value = lookup.findValue(entry.rawKey);
+            if (value == null || value.longValue() != entry.value) {
                 throw new IllegalStateException("Problem with "+lookup+", entry #"+i+", value "
                         +value+"; expected "+entry.value);
             }
@@ -93,16 +92,16 @@ public class SpeedTest
         b.setReorderEntries(REORDER);
         byte[] rawTrie = b.build().serialize();
         b = null; // just ensure we can GC interemediate stuff
-        TrieLookup arrayBased = new ByteArrayTrie(rawTrie);
+        TrieLookup<Long> arrayBased = new ByteArrayVIntTrieLookup(rawTrie);
         ByteBuffer buffer = ByteBuffer.allocateDirect((int) rawTrie.length);
         System.out.println("ByteBuffer: is-direct? "+buffer.isDirect());
         buffer.put(rawTrie);
 
-        TrieLookup bufferBased = new ByteBufferTrie(buffer, rawTrie.length);
-        SpeedTest test = new SpeedTest(entries);
+        TrieLookup<Long> bufferBased = new ByteBufferVIntTrieLookup(buffer, rawTrie.length);
+        VIntSpeedTest test = new VIntSpeedTest(entries);
         for (int i = 0; true; ++i) {
             long start = System.currentTimeMillis();
-            TrieLookup trie;
+            TrieLookup<Long> trie;
             switch (i % 2) {
             case 1:
                 trie = bufferBased;

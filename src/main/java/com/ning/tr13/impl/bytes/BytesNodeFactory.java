@@ -181,25 +181,6 @@ public class BytesNodeFactory
         public int typeBits() { return TYPE_BRANCH_WITH_VALUE; }
     
         @Override
-        public byte[] serialize()
-        {
-            long contentLen = lengthOfContent();
-            final int valueLen = _value.length;
-            long totalLen = VInt.lengthForUnsigned(valueLen, FIRST_BYTE_BITS_FOR_BRANCHES) + valueLen
-                    + VInt.lengthForUnsigned(contentLen, 8) + contentLen;
-            byte[] result = new byte[(int) totalLen];
-            // First: serialize value for this node:
-            int offset = VInt.unsignedToBytes(valueLen, FIRST_BYTE_BITS_FOR_BRANCHES, result, 0);
-            _addTypeBits(result, 0);
-            offset = copyBytes(_value, result, offset);
-            // then length of content (children)
-            offset = VInt.unsignedToBytes(contentLen, 8, result, offset);
-            // and then contents
-            offset = serializeChildren(result, offset);
-            return result;
-        }
-    
-        @Override
         public int serialize(byte[] result, int offset)
         {
             // First: serialize value for this node:
@@ -223,13 +204,13 @@ public class BytesNodeFactory
         {
             // First: serialize value for this node:
             final int valueLen = _value.length;
-            out.write(tmpBuf, 0, VInt.unsignedToBytes(valueLen, FIRST_BYTE_BITS_FOR_BRANCHES, tmpBuf, 0));
+            int len = VInt.unsignedToBytes(valueLen, FIRST_BYTE_BITS_FOR_BRANCHES, tmpBuf, 0);
             _addTypeBits(tmpBuf, 0);
+            out.write(tmpBuf, 0, len);
             out.write(_value);
             // then length indicator for contents
             long contentLen = lengthOfContent();
-            int ptr = VInt.unsignedToBytes(contentLen, 8, tmpBuf, 0);
-            out.write(tmpBuf, 0, ptr);
+            out.write(tmpBuf, 0, VInt.unsignedToBytes(contentLen, 8, tmpBuf, 0));
             // then children
             for (ClosedTrieNode<byte[]> n : _children) {
                 out.write(n.nextByte());

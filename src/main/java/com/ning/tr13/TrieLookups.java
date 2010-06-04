@@ -6,9 +6,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import com.ning.tr13.lookup.ByteArrayTrie;
-import com.ning.tr13.lookup.ByteBufferTrie;
+import com.ning.tr13.impl.vint.ByteArrayVIntTrieLookup;
+import com.ning.tr13.impl.vint.ByteBufferVIntTrieLookup;
 import com.ning.tr13.lookup.TrieHeader;
+import com.ning.tr13.lookup.VIntTrieLookup;
 import com.ning.tr13.util.InputUtil;
 
 /**
@@ -24,7 +25,7 @@ public class TrieLookups
      * an instance that uses direct byte buffer for storing and accessing
      * raw trie data during lookups.
      */
-    public static TrieLookup read(File f) throws IOException
+    public static VIntTrieLookup read(File f) throws IOException
     {
         return readByteBufferBased(f, new DirectByteBufferAllocator());
     }
@@ -35,20 +36,20 @@ public class TrieLookups
     /********************************************************** 
      */
 
-    public static TrieLookup constructByteArrayBased(byte[] raw)
+    public static VIntTrieLookup constructByteArrayBased(byte[] raw)
     {
-        return new ByteArrayTrie(raw);
+        return new ByteArrayVIntTrieLookup(raw);
     }
 
-    public static TrieLookup constructByteBufferBased(byte[] raw)
+    public static VIntTrieLookup constructByteBufferBased(byte[] raw)
     {
-        return new ByteArrayTrie(raw);
+        return new ByteArrayVIntTrieLookup(raw);
     }
 
-    public static TrieLookup constructByteBufferBased(byte[] raw,
+    public static VIntTrieLookup constructByteBufferBased(byte[] raw,
             ByteBufferAllocator a)
     {
-        return new ByteArrayTrie(raw);
+        return new ByteArrayVIntTrieLookup(raw);
     }
     
     /*
@@ -57,21 +58,21 @@ public class TrieLookups
     /********************************************************** 
      */
 
-    public static TrieLookup readByteArrayBased(File f) throws IOException
+    public static VIntTrieLookup readByteArrayBased(File f) throws IOException
     {
         FileInputStream fis = new FileInputStream(f);
-        TrieLookup trie = readByteArrayBased(fis);
+        VIntTrieLookup trie = readByteArrayBased(fis);
         fis.close();
         return trie;
     }
 
-    public static TrieLookup readByteArrayBased(InputStream in) throws IOException
+    public static VIntTrieLookup readByteArrayBased(InputStream in) throws IOException
     {
         TrieHeader header = _readHeader(in, true);
         int len = (int) header.getPayloadLength();
         byte[] buffer = new byte[len];
         InputUtil.readFully(in, buffer, 0, len);
-        return new ByteArrayTrie(buffer);
+        return new ByteArrayVIntTrieLookup(buffer);
     }
 
     /**
@@ -79,17 +80,17 @@ public class TrieLookups
      * allocates direct (native, non-Java) byte buffers to hold
      * raw trie data
      */
-    public static TrieLookup readByteBufferBased(File f)
+    public static VIntTrieLookup readByteBufferBased(File f)
         throws IOException
     {
         return readByteBufferBased(f, new DirectByteBufferAllocator());
     }
     
-    public static TrieLookup readByteBufferBased(File f, ByteBufferAllocator a)
+    public static VIntTrieLookup readByteBufferBased(File f, ByteBufferAllocator a)
         throws IOException
     {
         FileInputStream fis = new FileInputStream(f);
-        TrieLookup trie = readByteBufferBased(fis, a);
+        VIntTrieLookup trie = readByteBufferBased(fis, a);
         fis.close();
         return trie;
     }
@@ -99,13 +100,13 @@ public class TrieLookups
      * allocates direct (native, non-Java) byte buffers to hold
      * raw trie data
      */
-    public static TrieLookup readByteBufferBased(InputStream in)
+    public static VIntTrieLookup readByteBufferBased(InputStream in)
         throws IOException
     {
         return readByteBufferBased(in, new DirectByteBufferAllocator());
     }
 
-    public static TrieLookup readByteBufferBased(InputStream in, ByteBufferAllocator a)
+    public static VIntTrieLookup readByteBufferBased(InputStream in, ByteBufferAllocator a)
         throws IOException
     {
         TrieHeader header = _readHeader(in, true);
@@ -120,7 +121,7 @@ public class TrieLookups
             bb.put(buffer, 0, count);
             len -= count;
         }
-        return new ByteBufferTrie(bb, len);
+        return new ByteBufferVIntTrieLookup(bb, len);
     }
 
     /*

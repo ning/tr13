@@ -1,16 +1,20 @@
 package com.ning.tr13;
 
-import java.util.NoSuchElementException;
-
 /**
- * Class used for reading persistent trie structure, and accessing values it
- * has. Since there are multiple backend implementations, this is an abstract
- * class with API and factory methods for creating specialized instances.
  * 
  * @author tatu
+ *
+ * @param <V> Value type of the underlying Trie
  */
-public abstract class TrieLookup
+public abstract class TrieLookup<V>
 {
+    /**
+     * Class used for reading persistent trie structure, and accessing values it
+     * has. Since there are multiple backend implementations, this is an abstract
+     * class with API and factory methods for creating specialized instances.
+     * 
+     * @author tatu
+     */
     protected TrieLookup() { }
     
     /*
@@ -19,11 +23,10 @@ public abstract class TrieLookup
     /********************************************************** 
      */
 
-    public abstract long getValue(byte[] key) throws NoSuchElementException;
-
-    public abstract long getValue(byte[] key, long defaultValue);
-
-    public abstract Long findValue(byte[] key);
+    /**
+     * Main lookup method usable with all value types
+     */
+    public abstract V findValue(byte[] key);
 
     /*
     /********************************************************** 

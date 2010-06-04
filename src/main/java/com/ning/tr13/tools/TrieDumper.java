@@ -3,7 +3,6 @@ package com.ning.tr13.tools;
 import java.io.*;
 import java.util.Arrays;
 
-import com.ning.tr13.KeyValueReader;
 import com.ning.tr13.TrieConstants;
 import com.ning.tr13.lookup.TrieHeader;
 import com.ning.tr13.util.InputUtil;
@@ -14,7 +13,7 @@ import com.ning.tr13.util.VInt;
  * its contents in format that default
  * {@link com.ning.tr13.KeyValueReader} could read.
  */
-public class TrieDumper
+public abstract class TrieDumper
     extends TrieConstants
 {
     private final long[] tmpLongValueBuffer = new long[1];
@@ -23,7 +22,7 @@ public class TrieDumper
     
     protected final char valueSeparator;
     
-    public TrieDumper(char valueSeparator) {
+    protected TrieDumper(char valueSeparator) {
         this.valueSeparator = valueSeparator;
     }
     
@@ -135,19 +134,5 @@ public class TrieDumper
         }
         keyBuffer[keyLen] = nextKeyByte;
         return keyBuffer;
-    }
-    
-    public static void main(String[] args) throws IOException
-    {
-        if (args.length != 1) {
-            System.err.println("USAGE: java ... [trie-file]");
-            System.exit(1);
-        }      
-        FileInputStream in = new FileInputStream(args[0]);
-        BufferedOutputStream out = new BufferedOutputStream(System.out);
-        new TrieDumper(KeyValueReader.DEFAULT_SEPARATOR_CHAR).dump(in, out); 
-        in.close();
-        out.flush();
-        System.out.flush();
     }
 }

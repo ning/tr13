@@ -1,13 +1,14 @@
-package com.ning.tr13.lookup;
+package com.ning.tr13.impl.vint;
 
 import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 
 import com.ning.tr13.TrieConstants;
-import com.ning.tr13.TrieLookup;
+import com.ning.tr13.lookup.VIntTrieLookup;
 import com.ning.tr13.util.VInt;
 
-public class ByteBufferTrie extends TrieLookup
+public class ByteBufferVIntTrieLookup
+    extends VIntTrieLookup
 {
     /**
      * Buffer that contains raw trie data.
@@ -18,8 +19,8 @@ public class ByteBufferTrie extends TrieLookup
      * Number of bytes in {@link #_byteArray}
      */
     protected final int _size;
-
-    public ByteBufferTrie(ByteBuffer bb, int size) {
+    
+    public ByteBufferVIntTrieLookup(ByteBuffer bb, int size) {
         _byteBuffer = bb;
         _size = size;
     }

@@ -5,9 +5,9 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 import com.ning.tr13.*;
+import com.ning.tr13.impl.vint.ByteArrayVIntTrieLookup;
+import com.ning.tr13.impl.vint.ByteBufferVIntTrieLookup;
 import com.ning.tr13.impl.vint.SimpleVIntTrieBuilder;
-import com.ning.tr13.lookup.ByteArrayTrie;
-import com.ning.tr13.lookup.ByteBufferTrie;
 import com.ning.tr13.util.UTF8Codec;
 
 public class VIntTrieLookupTest
@@ -22,12 +22,14 @@ public class VIntTrieLookupTest
         TEST_ENTRIES.put("foo", 5);
     }
 
+    public VIntTrieLookupTest() { }
+    
     public void testSimpleUsingByteBuffer() throws Exception
     {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new SimpleVIntTrieBuilder(new MapReader(TEST_ENTRIES)).buildAndWrite(out, false);
         byte[] raw = out.toByteArray();
-        _testSimple(new ByteBufferTrie(ByteBuffer.wrap(raw), raw.length));
+        _testSimple(new ByteBufferVIntTrieLookup(ByteBuffer.wrap(raw), raw.length));
     }
 
     public void testSimpleUsingByteArray() throws Exception
@@ -35,7 +37,7 @@ public class VIntTrieLookupTest
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new SimpleVIntTrieBuilder(new MapReader(TEST_ENTRIES)).buildAndWrite(out, false);
         byte[] raw = out.toByteArray();
-        _testSimple(new ByteArrayTrie(raw));
+        _testSimple(new ByteArrayVIntTrieLookup(raw));
     }
 
     /*
@@ -44,15 +46,14 @@ public class VIntTrieLookupTest
     /**********************************************************
      */
 
-    private void _testSimple(TrieLookup trie) throws Exception
+    private void _testSimple(TrieLookup<Long> trie) throws Exception
     {
         for (Map.Entry<String,Number> entry : TEST_ENTRIES.entrySet()) {
-            long value = entry.getValue().longValue();
-            assertEquals(value, trie.getValue(entry.getKey().getBytes("UTF-8")));
+            Long value = entry.getValue().longValue();
+            assertEquals(value, trie.findValue(entry.getKey().getBytes("UTF-8")));
         }
         // and then others we shouldn't get
         assertNull(trie.findValue("fo".getBytes("UTF-8")));
-        assertEquals(-1L, trie.getValue("fo".getBytes("UTF-8"), -1L));
         assertNull(trie.findValue("foob".getBytes("UTF-8")));
         assertNull(trie.findValue("xuz".getBytes("UTF-8")));
         assertNull(trie.findValue("".getBytes("UTF-8")));

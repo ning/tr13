@@ -10,7 +10,7 @@ import com.ning.tr13.build.SimpleTrieBuilder;
 public class SimpleBytesTrieBuilder
     extends SimpleTrieBuilder<byte[]>
 {
-//    private final static VIntNodeFactory nodeFactory = new VIntNodeFactory();
+    private final static BytesNodeFactory nodeFactory = new BytesNodeFactory();
 
     public SimpleBytesTrieBuilder(KeyValueReader<byte[]> r) {
         this(r, false);
@@ -22,8 +22,7 @@ public class SimpleBytesTrieBuilder
 
     @Override
     public ClosedTrieNodeFactory<byte[]> closedTrieNodeFactory() {
-        // !!! TBI
-        return null;
+        return nodeFactory;
     }
 
     @Override

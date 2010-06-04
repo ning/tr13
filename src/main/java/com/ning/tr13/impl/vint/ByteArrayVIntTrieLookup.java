@@ -1,44 +1,30 @@
-package com.ning.tr13.lookup;
+package com.ning.tr13.impl.vint;
 
 import java.util.NoSuchElementException;
 
 import com.ning.tr13.TrieConstants;
-import com.ning.tr13.TrieLookup;
+import com.ning.tr13.lookup.VIntTrieLookup;
 import com.ning.tr13.util.VInt;
 
-public class ByteArrayTrie extends TrieLookup
+public class ByteArrayVIntTrieLookup
+    extends VIntTrieLookup
 {
     /**
      * Buffer that contains raw trie data.
      */
     protected final byte[] _byteArray;
 
-    public ByteArrayTrie(byte[] raw) {
+    public ByteArrayVIntTrieLookup(byte[] raw) {
         _byteArray = raw;
     }
 
     /*
     /**********************************************************
-    /* Trie API impl
+    /* TrieLookup impl
     /**********************************************************
      */
 
-    public long getValue(byte[] key) throws NoSuchElementException {
-        Path result = _findValue(new Path(key), 0);
-        if (result != null) {
-            return result.value();
-        }
-        throw new NoSuchElementException("No value for key "+_printKey(key, 0, key.length));
-    }
-
-    public long getValue(byte[] key, long defaultValue) {
-        Path result = _findValue(new Path(key), 0);
-        if (result != null) {
-            return result.value();
-        }
-        return defaultValue;
-    }
-
+    @Override
     public Long findValue(byte[] key) {
         Path result = _findValue(new Path(key), 0);
         if (result != null) {
@@ -46,6 +32,33 @@ public class ByteArrayTrie extends TrieLookup
         }
         return null;
     }
+
+    /*
+    /**********************************************************
+    /* VIntTrieLookup impl
+    /**********************************************************
+     */
+    
+    @Override
+    public long getValue(byte[] key) throws NoSuchElementException
+    {
+        Path result = _findValue(new Path(key), 0);
+        if (result != null) {
+            return result.value();
+        }
+        throw new NoSuchElementException("No value for key "+_printKey(key, 0, key.length));
+    }
+
+    @Override
+    public long getValue(byte[] key, long defaultValue)
+    {
+        Path result = _findValue(new Path(key), 0);
+        if (result != null) {
+            return result.value();
+        }
+        return defaultValue;
+    }
+
 
     /*
     /**********************************************************
