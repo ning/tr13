@@ -1,4 +1,4 @@
-package com.ning.tr13.impl.vint;
+package com.ning.tr13.impl.bytes;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -10,26 +10,26 @@ import com.ning.tr13.build.ClosedTrieNode.SerializedNode;
 import com.ning.tr13.build.ClosedTrieNode.SimpleBranch;
 import com.ning.tr13.util.VInt;
 
-public class VIntNodeFactory
-    extends ClosedTrieNodeFactory<Long>
+public class BytesNodeFactory
+    extends ClosedTrieNodeFactory<byte[]>
 {
     @Override
-    public ClosedTrieNode<Long> serialized(ClosedTrieNode<Long> node) {
-        return new SerializedNode<Long>(node.nextByte(), node.serialize());
+    public ClosedTrieNode<byte[]> serialized(ClosedTrieNode<byte[]> node) {
+        return new SerializedNode<byte[]>(node.nextByte(), node.serialize());
     }
 
     @Override
-    public ClosedTrieNode<Long> simpleBranch(byte b, ClosedTrieNode<Long>[] kids) {
-        return new SimpleBranch<Long>(b, kids);
+    public ClosedTrieNode<byte[]> simpleBranch(byte b, ClosedTrieNode<byte[]>[] kids) {
+        return new SimpleBranch<byte[]>(b, kids);
     }
 
     @Override
-    public ClosedTrieNode<Long> simpleLeaf(byte b, Long value) {
-        return new SimpleLeaf(b, value.longValue());
+    public ClosedTrieNode<byte[]> simpleLeaf(byte b, byte[] value) {
+        return new SimpleLeaf(b, value);
     }
 
     @Override
-    public ClosedTrieNode<Long> suffixLeaf(byte b, ClosedTrieNode<Long> node)
+    public ClosedTrieNode<byte[]> suffixLeaf(byte b, ClosedTrieNode<byte[]> node)
     {
         if (node instanceof SimpleLeaf) { // convert into suffix one
             SimpleLeaf leaf = (SimpleLeaf) node;
@@ -45,10 +45,17 @@ public class VIntNodeFactory
     }
 
     @Override
-    public ClosedTrieNode<Long> valueBranch(byte b, ClosedTrieNode<Long>[] kids, Long value) {
-        return new BranchWithValue(b, kids, value.longValue());
+    public ClosedTrieNode<byte[]> valueBranch(byte b, ClosedTrieNode<byte[]>[] kids, byte[] value) {
+        return new BranchWithValue(b, kids, value);
     }
 
+    protected static int copyBytes(byte[] src, byte[] dst, int dstOffset)
+    {
+        int len = src.length;
+        System.arraycopy(src, 0, dst, dstOffset, len);
+        return dstOffset + len;
+    }
+    
     /*
     /**********************************************************
     /* Concrete node implementations
@@ -61,20 +68,21 @@ public class VIntNodeFactory
      * is retained here to keep branch object simpler.
      */
     public final static class SimpleLeaf
-        extends Leaf<Long>
+        extends Leaf<byte[]>
     {
-        protected final long _value;
+        protected final byte[] _value;
 
-        protected SimpleLeaf(byte b, long v)
+        protected SimpleLeaf(byte b, byte[] v)
         {
             super(b);
             _value = v;
         }
 
-        public long value() { return _value; }
+        public byte[] value() { return _value; }
         
         public long length() {
-            return VInt.lengthForUnsigned(_value, FIRST_BYTE_BITS_FOR_LEAVES);
+            int dataLen = _value.length;
+            return VInt.lengthForUnsigned(dataLen, FIRST_BYTE_BITS_FOR_LEAVES) + dataLen;
         }
 
         public int typeBits() { return TYPE_LEAF_SIMPLE; }
@@ -82,72 +90,78 @@ public class VIntNodeFactory
 
         public int serialize(byte[] result, int offset)
         {
-            int resultOffset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_LEAVES, result, offset);
-            _addTypeBits(result, offset);
-            return resultOffset;
+            int origOffset = offset;
+            offset = VInt.unsignedToBytes(_value.length, FIRST_BYTE_BITS_FOR_LEAVES, result, 0);
+            _addTypeBits(result, origOffset);
+            return copyBytes(_value, result, offset);
         }
 
         public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
         {
-            // Note: caller must ensure buffer is big enough
-            out.write(tmpBuf, 0, serialize(tmpBuf, 0));
+            // due to unlimited length of value, can't just delegate to serialize...
+            int len = VInt.unsignedToBytes(_value.length, FIRST_BYTE_BITS_FOR_LEAVES, tmpBuf, 0);
+            _addTypeBits(tmpBuf, 0);
+            out.write(tmpBuf, 0, len);
+            out.write(_value);
         }
     }
 
     public final static class SuffixLeaf
-        extends Leaf<Long>
+        extends Leaf<byte[]>
     {
-        protected final long _value;
+        protected final byte[] _value;
 
         protected final byte[] _suffix;
         
-        protected SuffixLeaf(byte b, long value, byte[] suffix)
+        protected SuffixLeaf(byte b, byte[] value, byte[] suffix)
         {
             super(b);
             _value = value;
             _suffix = suffix;
         }
 
-        public long value() { return _value; }
+        public byte[] value() { return _value; }
         
         public long length() {
-            int len = _suffix.length;
-            return VInt.lengthForUnsigned(_value, FIRST_BYTE_BITS_FOR_LEAVES)
-                + VInt.lengthForUnsigned(len, 8)
-                + len;
+            int valueLen = _value.length;
+            int suffixLen = _suffix.length;
+            return VInt.lengthForUnsigned(valueLen, FIRST_BYTE_BITS_FOR_LEAVES)
+                + valueLen
+                + VInt.lengthForUnsigned(suffixLen, 8)
+                + suffixLen;
         }
     
-        public int typeBits() { return TYPE_LEAF_WITH_SUFFIX; }
+        public int typeBits() { return TYPE_LEAF_WITH_SUFFIX; } 
     
         public int serialize(byte[] result, int offset)
         {
             int origOffset = offset;
-            offset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_LEAVES, result, offset);
+            int valueLen = _value.length;
+            offset = VInt.unsignedToBytes(valueLen, FIRST_BYTE_BITS_FOR_LEAVES, result, offset);
             _addTypeBits(result, origOffset);
-            int len = _suffix.length;
-            offset = VInt.unsignedToBytes(len, 8, result, offset);
-            System.arraycopy(_suffix, 0, result, offset, len);
-            offset += len;
-            return offset;
+            offset = copyBytes(_value, result, offset);
+            int suffixLen = _suffix.length;
+            offset = VInt.unsignedToBytes(suffixLen, 8, result, offset);
+            return copyBytes(_suffix, result, offset);
         }
 
         public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
         {
-            int offset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_LEAVES, tmpBuf, 0);
+            int len = VInt.unsignedToBytes(_value.length, FIRST_BYTE_BITS_FOR_LEAVES, tmpBuf, 0);
             _addTypeBits(tmpBuf, 0);
-            int suffixLen = _suffix.length;
-            offset = VInt.unsignedToBytes(suffixLen, 8, tmpBuf, offset);
-            out.write(tmpBuf, 0, offset);
-            out.write(_suffix, 0, suffixLen);
+            out.write(tmpBuf, 0, len);
+            out.write(_value);
+            out.write(tmpBuf, 0, VInt.unsignedToBytes(_suffix.length, 8, tmpBuf, 0));
+            out.write(_suffix);
         }
     }
     
     protected static class BranchWithValue
-        extends SimpleBranch<Long>
+        extends SimpleBranch<byte[]>
     {
-        protected final long _value;
+        protected final byte[] _value;
         
-        protected BranchWithValue(byte b, ClosedTrieNode<Long>[] kids, long value)
+        protected BranchWithValue(byte b, ClosedTrieNode<byte[]>[] kids, byte[] value)
         {
             super(b, kids);
             _value = value;
@@ -157,9 +171,10 @@ public class VIntNodeFactory
         public long length()
         {
             // note: slightly different from super, since we start with value!
-            long len = lengthOfContent();
-            return len + VInt.lengthForUnsigned(_value, FIRST_BYTE_BITS_FOR_BRANCHES)
-                + VInt.lengthForUnsigned(len, 8);
+            long contentLen = lengthOfContent();
+            int valueLen = _value.length;
+            return VInt.lengthForUnsigned(valueLen, FIRST_BYTE_BITS_FOR_BRANCHES) + valueLen
+                + VInt.lengthForUnsigned(contentLen, 8) + contentLen;
         }
         
         @Override
@@ -169,13 +184,14 @@ public class VIntNodeFactory
         public byte[] serialize()
         {
             long contentLen = lengthOfContent();
-            long totalLen = contentLen
-                    + VInt.lengthForUnsigned(_value, FIRST_BYTE_BITS_FOR_BRANCHES)
-                    + VInt.lengthForUnsigned(contentLen, 8);
+            final int valueLen = _value.length;
+            long totalLen = VInt.lengthForUnsigned(valueLen, FIRST_BYTE_BITS_FOR_BRANCHES) + valueLen
+                    + VInt.lengthForUnsigned(contentLen, 8) + contentLen;
             byte[] result = new byte[(int) totalLen];
             // First: serialize value for this node:
-            int offset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_BRANCHES, result, 0);
+            int offset = VInt.unsignedToBytes(valueLen, FIRST_BYTE_BITS_FOR_BRANCHES, result, 0);
             _addTypeBits(result, 0);
+            offset = copyBytes(_value, result, offset);
             // then length of content (children)
             offset = VInt.unsignedToBytes(contentLen, 8, result, offset);
             // and then contents
@@ -187,14 +203,17 @@ public class VIntNodeFactory
         public int serialize(byte[] result, int offset)
         {
             // First: serialize value for this node:
+            final int valueLen = _value.length;
             int origOffset = offset;
-            offset = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_BRANCHES, result, offset);
+            offset = VInt.unsignedToBytes(valueLen, FIRST_BYTE_BITS_FOR_BRANCHES, result, offset);
             _addTypeBits(result, origOffset);
-            // Then length indicator
+            offset = copyBytes(_value, result, offset);
+            // Then content length indicator
             long contentLen = lengthOfContent();
             offset = VInt.unsignedToBytes(contentLen, 8, result, offset);
-            // and then contents
+            // and contents
             offset = serializeChildren(result, offset);
+            // sanity check (optional)
             if ((origOffset + length()) != offset) throw new IllegalStateException("Internal error: ValueBranch expected length wrong");
             return offset;
         }
@@ -203,15 +222,16 @@ public class VIntNodeFactory
         public void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException
         {
             // First: serialize value for this node:
-            int len = VInt.unsignedToBytes(_value, FIRST_BYTE_BITS_FOR_BRANCHES, tmpBuf, 0);
+            final int valueLen = _value.length;
+            out.write(tmpBuf, 0, VInt.unsignedToBytes(valueLen, FIRST_BYTE_BITS_FOR_BRANCHES, tmpBuf, 0));
             _addTypeBits(tmpBuf, 0);
-            out.write(tmpBuf, 0, len);
+            out.write(_value);
             // then length indicator for contents
             long contentLen = lengthOfContent();
             int ptr = VInt.unsignedToBytes(contentLen, 8, tmpBuf, 0);
             out.write(tmpBuf, 0, ptr);
             // then children
-            for (ClosedTrieNode<Long> n : _children) {
+            for (ClosedTrieNode<byte[]> n : _children) {
                 out.write(n.nextByte());
                 n.serializeTo(out, tmpBuf);
             }

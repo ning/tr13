@@ -10,7 +10,7 @@ import com.ning.tr13.lookup.ByteArrayTrie;
 import com.ning.tr13.lookup.ByteBufferTrie;
 import com.ning.tr13.util.UTF8Codec;
 
-public class TrieLookupTest
+public class VIntTrieLookupTest
     extends junit.framework.TestCase
 {
     final static Map<String,Number> TEST_ENTRIES = new LinkedHashMap<String,Number>();

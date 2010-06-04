@@ -43,7 +43,12 @@ public abstract class ClosedTrieNode<T>
     public abstract long length();
 
     @Override
-    public abstract byte[] serialize();
+    public byte[] serialize()
+    {
+        byte[] result = new byte[(int) length()];
+        serialize(result, 0);
+        return result;
+    }
 
     @Override
     public abstract void serializeTo(OutputStream out, byte[] tmpBuf) throws IOException;
