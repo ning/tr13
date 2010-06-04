@@ -15,11 +15,21 @@ public class VIntTrieLookupTest
 {
     final static Map<String,Number> TEST_ENTRIES = new LinkedHashMap<String,Number>();
     static {
+        /*
         TEST_ENTRIES.put("ab", 10);
         TEST_ENTRIES.put("abc", 20);
         TEST_ENTRIES.put("abe", 3);
         TEST_ENTRIES.put("afgh", 4);
         TEST_ENTRIES.put("foo", 5);
+        */
+
+        TEST_ENTRIES.put("ab", 1);
+        TEST_ENTRIES.put("abc", 2);
+        TEST_ENTRIES.put("abe", 3);
+        TEST_ENTRIES.put("afgh", 4);
+        TEST_ENTRIES.put("foo", 5);
+        TEST_ENTRIES.put("foobar", 6);
+        TEST_ENTRIES.put("fx", 7);
     }
 
     public VIntTrieLookupTest() { }

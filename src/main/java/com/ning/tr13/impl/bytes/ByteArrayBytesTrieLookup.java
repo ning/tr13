@@ -56,7 +56,7 @@ public class ByteArrayBytesTrieLookup
                 if (path.endOfKey()) {
                     ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
                             _byteArray, ptr, longHolder);
-                    int valueLength = (int) longHolder[0];
+                    final int valueLength = (int) longHolder[0];
                     path.setValue(_byteArray, ptr, valueLength);
                     return path;
                 }
@@ -66,9 +66,9 @@ public class ByteArrayBytesTrieLookup
                 // First we get value, as with regular leaves
                 ptr = VInt.bytesToUnsigned(TrieConstants.FIRST_BYTE_BITS_FOR_LEAVES,
                         _byteArray, ptr, longHolder);
-                int length = (int) longHolder[0];
-                path.setValue(_byteArray, ptr, length);
-                ptr += length;
+                final int valueLength = (int) longHolder[0];
+                path.setValue(_byteArray, ptr, valueLength);
+                ptr += valueLength;
                 // Then length of suffix verification
                 ptr = VInt.bytesToUnsigned(8, _byteArray, ptr, longHolder);
                 int suffixLen = (int) longHolder[0];

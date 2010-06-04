@@ -5,9 +5,6 @@ import java.io.OutputStream;
 
 import com.ning.tr13.build.ClosedTrieNode;
 import com.ning.tr13.build.ClosedTrieNodeFactory;
-import com.ning.tr13.build.ClosedTrieNode.Leaf;
-import com.ning.tr13.build.ClosedTrieNode.SerializedNode;
-import com.ning.tr13.build.ClosedTrieNode.SimpleBranch;
 import com.ning.tr13.util.VInt;
 
 public class VIntNodeFactory

@@ -21,9 +21,9 @@ public class BytesTrieLookupTest
 {
     final static Map<String,String> TEST_ENTRIES = new LinkedHashMap<String,String>();
     static {
-        TEST_ENTRIES.put("aa", "foob");
+        TEST_ENTRIES.put("ab", "foob");
         TEST_ENTRIES.put("abc", "f");
-        TEST_ENTRIES.put("abe", "xxxx");
+        TEST_ENTRIES.put("abe", "xxxxx");
         TEST_ENTRIES.put("afgh", "-12535");
         TEST_ENTRIES.put("foo", "");
         TEST_ENTRIES.put("foobar", "ouch");
@@ -35,6 +35,11 @@ public class BytesTrieLookupTest
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new SimpleBytesTrieBuilder(new MapReader(TEST_ENTRIES)).buildAndWrite(out, false);
         byte[] raw = out.toByteArray();
+/*        
+for (int i = 0; i < raw.length; ++i) {
+    System.out.println("#"+i+" -> 0x"+Integer.toHexString(0xFF & raw[i])+" / '"+((char) raw[i])+"'");
+}
+   */     
         _testSimple(new ByteBufferBytesTrieLookup(ByteBuffer.wrap(raw), raw.length));
     }
 
@@ -57,9 +62,11 @@ public class BytesTrieLookupTest
         int ix = 0;
         for (Map.Entry<String,String> entry : TEST_ENTRIES.entrySet()) {
             ++ix;
-            byte[] value = UTF8Codec.toUTF8(entry.getValue());
-            assertArrayEquals("Entry "+ix+"/"+TEST_ENTRIES.size(),
-                    value, trie.findValue(entry.getKey().getBytes("UTF-8")));
+            byte[] expValue = UTF8Codec.toUTF8(entry.getValue());
+            String desc = "Entry "+ix+"/"+TEST_ENTRIES.size();
+            byte[] actual = trie.findValue(entry.getKey().getBytes("UTF-8"));
+            assertNotNull(desc+" not found", actual);
+            assertArrayEquals(desc, expValue, actual);
         }
         // and then others we shouldn't get
         assertNull(trie.findValue("fo".getBytes("UTF-8")));
