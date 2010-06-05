@@ -6,8 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
+import com.ning.tr13.impl.bytes.ByteArrayBytesTrieLookup;
+import com.ning.tr13.impl.bytes.ByteBufferBytesTrieLookup;
 import com.ning.tr13.impl.vint.ByteArrayVIntTrieLookup;
 import com.ning.tr13.impl.vint.ByteBufferVIntTrieLookup;
+import com.ning.tr13.lookup.BytesTrieLookup;
 import com.ning.tr13.lookup.TrieHeader;
 import com.ning.tr13.lookup.VIntTrieLookup;
 import com.ning.tr13.util.InputUtil;
@@ -21,52 +24,111 @@ public class TrieLookups
     private TrieLookups() { }
     
     /**
-     * Factory method that will read Trie from given file, and construct
-     * an instance that uses direct byte buffer for storing and accessing
-     * raw trie data during lookups.
+     * Factory method that will read VInt (~= Long) valued Trie from given file
+     * and construct a lookup instance that uses direct byte buffer for storing
+     * and accessing raw trie data during lookups.
      */
-    public static VIntTrieLookup read(File f) throws IOException
+    public static VIntTrieLookup readVIntTrie(File f) throws IOException
+    {
+        return readByteBufferVIntTrie(f, new DirectByteBufferAllocator());
+    }
+
+    /**
+     * Factory method that will read byte[] valued Trie from given file
+     * and construct a lookup instance that uses direct byte buffer for storing
+     * and accessing raw trie data during lookups.
+     */
+    /*
+    public static BytesTrieLookup readBytesTrie(File f) throws IOException
     {
         return readByteBufferBased(f, new DirectByteBufferAllocator());
     }
-
-    /*
-    /********************************************************** 
-    /* Factory methods, "raw"
-    /********************************************************** 
-     */
-
-    public static VIntTrieLookup constructByteArrayBased(byte[] raw)
-    {
-        return new ByteArrayVIntTrieLookup(raw);
-    }
-
-    public static VIntTrieLookup constructByteBufferBased(byte[] raw)
-    {
-        return new ByteArrayVIntTrieLookup(raw);
-    }
-
-    public static VIntTrieLookup constructByteBufferBased(byte[] raw,
-            ByteBufferAllocator a)
-    {
-        return new ByteArrayVIntTrieLookup(raw);
-    }
+    */
     
     /*
     /********************************************************** 
-    /* Factory methods, from files etc
+    /* Factory methods, "raw"; used when raw trie data structure
+    /* is already in memory
     /********************************************************** 
      */
 
-    public static VIntTrieLookup readByteArrayBased(File f) throws IOException
+    /**
+     * Method for constructing variable int (VInt) valued tries, using
+     * raw byte array as is for lookup.
+     */
+    public static VIntTrieLookup constructByteArrayVIntTrie(byte[] raw)
+    {
+        return new ByteArrayVIntTrieLookup(raw);
+    }
+
+    /**
+     * Method for constructing variable int (VInt) valued tries,
+     * by copying give byte array contents into a (direct) byte buffer
+     * used for lookups.
+     */
+    public static VIntTrieLookup constructByteBufferVIntTrie(byte[] raw)
+    {
+        return constructByteBufferVIntTrie(raw, new DirectByteBufferAllocator());
+    }
+
+    /**
+     * Method for constructing variable int (VInt) valued tries,
+     * by copying give byte array contents into a (direct) byte buffer
+     * used for lookups.
+     */
+    public static VIntTrieLookup constructByteBufferVIntTrie(byte[] raw,
+            ByteBufferAllocator a)
+    {
+    	ByteBuffer bb = _arrayToBuffer(raw, a);
+        return new ByteBufferVIntTrieLookup(bb, raw.length);
+    }
+    
+    /**
+     * Method for constructing byte[] ("bytes") valued tries, using
+     * raw byte array as is for lookup.
+     */
+    public static BytesTrieLookup constructByteArrayBytesTrie(byte[] raw)
+    {
+        return new ByteArrayBytesTrieLookup(raw);
+    }
+
+    /**
+     * Method for constructing byte[] ("bytes") valued tries, using
+     * by copying give byte array contents into a (direct) byte buffer
+     * used for lookups.
+     */
+    public static BytesTrieLookup constructByteBufferBytesTrie(byte[] raw)
+    {
+        return constructByteBufferBytesTrie(raw, new DirectByteBufferAllocator());
+    }
+
+    /**
+     * Method for constructing byte[] ("bytes") valued tries, using
+     * by copying give byte array contents into a (direct) byte buffer
+     * used for lookups.
+     */
+    public static BytesTrieLookup constructByteBufferBytesTrie(byte[] raw,
+            ByteBufferAllocator a)
+    {
+    	ByteBuffer bb = _arrayToBuffer(raw, a);
+        return new ByteBufferBytesTrieLookup(bb, raw.length);
+    }
+
+    /*
+    /********************************************************** 
+    /* Factory methods, from files etc, for VInt-valued tries
+    /********************************************************** 
+     */
+
+    public static VIntTrieLookup readByteArrayVIntTrie(File f) throws IOException
     {
         FileInputStream fis = new FileInputStream(f);
-        VIntTrieLookup trie = readByteArrayBased(fis);
+        VIntTrieLookup trie = readByteArrayVIntTrie(fis);
         fis.close();
         return trie;
     }
 
-    public static VIntTrieLookup readByteArrayBased(InputStream in) throws IOException
+    public static VIntTrieLookup readByteArrayVIntTrie(InputStream in) throws IOException
     {
         TrieHeader header = _readHeader(in, true);
         int len = (int) header.getPayloadLength();
@@ -80,17 +142,17 @@ public class TrieLookups
      * allocates direct (native, non-Java) byte buffers to hold
      * raw trie data
      */
-    public static VIntTrieLookup readByteBufferBased(File f)
+    public static VIntTrieLookup readByteBufferVIntTrie(File f)
         throws IOException
     {
-        return readByteBufferBased(f, new DirectByteBufferAllocator());
+        return readByteBufferVIntTrie(f, new DirectByteBufferAllocator());
     }
     
-    public static VIntTrieLookup readByteBufferBased(File f, ByteBufferAllocator a)
+    public static VIntTrieLookup readByteBufferVIntTrie(File f, ByteBufferAllocator a)
         throws IOException
     {
         FileInputStream fis = new FileInputStream(f);
-        VIntTrieLookup trie = readByteBufferBased(fis, a);
+        VIntTrieLookup trie = readByteBufferVIntTrie(fis, a);
         fis.close();
         return trie;
     }
@@ -100,13 +162,13 @@ public class TrieLookups
      * allocates direct (native, non-Java) byte buffers to hold
      * raw trie data
      */
-    public static VIntTrieLookup readByteBufferBased(InputStream in)
+    public static VIntTrieLookup readByteBufferVIntTrie(InputStream in)
         throws IOException
     {
-        return readByteBufferBased(in, new DirectByteBufferAllocator());
+        return readByteBufferVIntTrie(in, new DirectByteBufferAllocator());
     }
 
-    public static VIntTrieLookup readByteBufferBased(InputStream in, ByteBufferAllocator a)
+    public static VIntTrieLookup readByteBufferVIntTrie(InputStream in, ByteBufferAllocator a)
         throws IOException
     {
         TrieHeader header = _readHeader(in, true);
@@ -126,6 +188,79 @@ public class TrieLookups
 
     /*
     /********************************************************** 
+    /* Factory methods, from files etc, for byte[]-valued tries
+    /********************************************************** 
+     */
+
+    public static BytesTrieLookup readByteArrayBytesTrie(File f) throws IOException
+    {
+        FileInputStream fis = new FileInputStream(f);
+        BytesTrieLookup trie = readByteArrayBytesTrie(fis);
+        fis.close();
+        return trie;
+    }
+
+    public static BytesTrieLookup readByteArrayBytesTrie(InputStream in) throws IOException
+    {
+        TrieHeader header = _readHeader(in, true);
+        int len = (int) header.getPayloadLength();
+        byte[] buffer = new byte[len];
+        InputUtil.readFully(in, buffer, 0, len);
+        return new ByteArrayBytesTrieLookup(buffer);
+    }
+
+    /**
+     * Note: defaults to using {@link ByteBufferAllocator} that
+     * allocates direct (native, non-Java) byte buffers to hold
+     * raw trie data
+     */
+    public static BytesTrieLookup readByteBufferBytesTrie(File f)
+        throws IOException
+    {
+        return readByteBufferBytesTrie(f, new DirectByteBufferAllocator());
+    }
+    
+    public static BytesTrieLookup readByteBufferBytesTrie(File f, ByteBufferAllocator a)
+        throws IOException
+    {
+        FileInputStream fis = new FileInputStream(f);
+        BytesTrieLookup trie = readByteBufferBytesTrie(fis, a);
+        fis.close();
+        return trie;
+    }
+
+    /**
+     * Note: defaults to using {@link ByteBufferAllocator} that
+     * allocates direct (native, non-Java) byte buffers to hold
+     * raw trie data
+     */
+    public static BytesTrieLookup readByteBufferBytesTrie(InputStream in)
+        throws IOException
+    {
+        return readByteBufferBytesTrie(in, new DirectByteBufferAllocator());
+    }
+
+    public static BytesTrieLookup readByteBufferBytesTrie(InputStream in, ByteBufferAllocator a)
+        throws IOException
+    {
+        TrieHeader header = _readHeader(in, true);
+        int len = (int) header.getPayloadLength();
+        ByteBuffer bb = a.allocate(len);
+        byte[] buffer = new byte[16000];
+        while (len > 0) {
+            int count = in.read(buffer, 0, Math.min(len, buffer.length));
+            if (count < 0) {
+                throw new IOException("Unexpected end-of-stream: still needed to read "+len+" bytes");
+            }
+            bb.put(buffer, 0, count);
+            len -= count;
+        }
+        return new ByteBufferBytesTrieLookup(bb, len);
+    }
+    
+    
+    /*
+    /********************************************************** 
     /* Internal methods
     /********************************************************** 
      */
@@ -142,6 +277,13 @@ public class TrieLookups
         }
         return h;
     }  
+
+    protected static ByteBuffer _arrayToBuffer(byte[] data, ByteBufferAllocator allocator)
+    {
+    	ByteBuffer bb = allocator.allocate(data.length);
+    	bb.put(data);
+    	return bb;
+    }
     
     /*
     /********************************************************** 
@@ -159,6 +301,10 @@ public class TrieLookups
         public ByteBuffer allocate(int size);
     }
 
+    /**
+     * Concrete {@link ByteBufferAllocator} instance that allocates
+     * direct byte buffers.
+     */
     public static class DirectByteBufferAllocator
         implements ByteBufferAllocator
     {
