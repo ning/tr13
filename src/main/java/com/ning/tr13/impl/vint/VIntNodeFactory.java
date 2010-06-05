@@ -57,7 +57,7 @@ public class VIntNodeFactory
      * step). Serialization only has VInt itself; byte that leads to node
      * is retained here to keep branch object simpler.
      */
-    public final static class SimpleLeaf
+    private final static class SimpleLeaf
         extends Leaf<Long>
     {
         protected final long _value;
@@ -91,7 +91,7 @@ public class VIntNodeFactory
         }
     }
 
-    public final static class SuffixLeaf
+    private final static class SuffixLeaf
         extends Leaf<Long>
     {
         protected final long _value;
@@ -139,7 +139,7 @@ public class VIntNodeFactory
         }
     }
     
-    protected static class BranchWithValue
+    private final static class BranchWithValue
         extends SimpleBranch<Long>
     {
         protected final long _value;

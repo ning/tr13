@@ -95,11 +95,11 @@ public abstract class ClosedTrieNodeFactory<T>
             // first one is VInt for total length; but that itself needs to be calculated
             long len = lengthOfContent();
             // and otherwise it really is just that length and child contents
-            return VInt.lengthForUnsigned(len, 6) + len; 
+            return VInt.lengthForUnsigned(len, FIRST_BYTE_BITS_FOR_BRANCHES) + len; 
         }
 
         public int typeBits() { return TYPE_BRANCH_SIMPLE; }
-        public boolean isLeaf() { return false; }
+        public final boolean isLeaf() { return false; }
 
         public byte[] serialize()
         {

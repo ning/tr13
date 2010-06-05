@@ -35,11 +35,11 @@ public class BytesTrieLookupTest
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         new SimpleBytesTrieBuilder(new MapReader(TEST_ENTRIES)).buildAndWrite(out, false);
         byte[] raw = out.toByteArray();
-/*        
+        /* // uncomment for eyeballing if necessary:
 for (int i = 0; i < raw.length; ++i) {
     System.out.println("#"+i+" -> 0x"+Integer.toHexString(0xFF & raw[i])+" / '"+((char) raw[i])+"'");
 }
-   */     
+*/
         _testSimple(new ByteBufferBytesTrieLookup(ByteBuffer.wrap(raw), raw.length));
     }
 
