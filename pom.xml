@@ -12,9 +12,11 @@
 access to large in-memory datasets.
   </description>
   <scm>
-    <connection>scm:git:git@github.com:ning/tr13.git</connection>
-    <url>scm:git:git@github.com:ning/tr13.git</url>
-    <developerConnection>scm:git:git@github.com:ning/tr13.git</developerConnection>
+    <connection>scm:git:git://github.com/ning/tr13.git</connection>
+    <developerConnection>scm:git:git://github.com:ning/tr13.git</developerConnection>
+<!--
+    <url>scm:git:git://github.com/ning/tr13.git</url>
+-->
   </scm>
   <prerequisites>
     <maven>2.0.9</maven>
