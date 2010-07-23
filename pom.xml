@@ -15,7 +15,7 @@ access to large in-memory datasets.
     <url>http://github.com/ning/tr13</url>    
   </scm>
   <prerequisites>
-    <maven>2.0.9</maven>
+    <maven>2.2.1</maven>
   </prerequisites>
   <dependencies>
      <!-- and for testing, JUnit is needed -->
