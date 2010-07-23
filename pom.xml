@@ -3,7 +3,7 @@
   <groupId>com.ning</groupId>
   <artifactId>tr13</artifactId>
   <name>Ning-tr13</name>
-  <version>0.2.4</version>
+  <version>0.2.5-SNAPSHOT</version>
   <!-- TODO: as OSGi bundle -->
   <packaging>jar</packaging>
   <description>Library for building simple compact read-only Tries, for space-efficient
