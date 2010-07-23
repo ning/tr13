@@ -2,16 +2,17 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.ning</groupId>
   <artifactId>tr13</artifactId>
-  <name>Tr13</name>
+  <name>Ning-tr13</name>
   <version>0.2.1-SNAPSHOT</version>
   <!-- TODO: as OSGi bundle -->
   <packaging>jar</packaging>
-  <description>Library for building simple compact Tries, for space-efficient
+  <description>Library for building simple compact read-only Tries, for space-efficient
 access to large in-memory datasets.
   </description>
   <scm>
-    <connection>scm:git:git://github.com/ning/tr13.git</connection>
-    <developerConnection>scm:git:git://github.com/ning/tr13.git</developerConnection>
+    <connection>scm:git:git@github.com:ning/tr13.git</connection>
+    <developerConnection>scm:git:git@github.com:ning/tr13.git</developerConnection>
+    <url>http://github.com/ning/tr13</url>    
   </scm>
   <prerequisites>
     <maven>2.0.9</maven>
@@ -25,6 +26,18 @@ access to large in-memory datasets.
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <!-- Licensing -->
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <organization>
+    <name>Ning.com</name>
+    <url>http://www.ning.com</url>
+  </organization>
 
   <build>
     <plugins>
@@ -35,6 +48,11 @@ access to large in-memory datasets.
           <target>1.6</target>
         </configuration>
       </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-release-plugin</artifactId>
+            <version>2.0</version>
+        </plugin>
         <plugin><!-- plug-in to attach source bundle in repo -->
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
@@ -46,6 +64,29 @@ access to large in-memory datasets.
               </goals>
             </execution>
           </executions>
+        </plugin>
+        <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                    <encoding>UTF-8</encoding>
+                    <maxmemory>1g</maxmemory>
+                    <links>
+                        <link>http://java.sun.com/javase/6/docs/api/</link>
+                    </links>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
         </plugin>
 
         <!-- Plus, let's make jars OSGi bundles as well  -->
@@ -73,19 +114,34 @@ com.ning.tr13.util
         </plugin>
     </plugins>
   </build>
-
-  <!-- Licensing -->
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-  <organization>
-    <name>Ning.com</name>
-    <url>http://www.ning.com</url>
-  </organization>
+  <profiles>
+        <profile>
+            <id>release-sign-artifacts</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+  </profiles>
 
   <!-- published using oss.sonatype.org: -->
   <repositories>
