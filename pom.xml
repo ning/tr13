@@ -17,6 +17,10 @@ access to large in-memory datasets.
   <prerequisites>
     <maven>2.2.1</maven>
   </prerequisites>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
   <dependencies>
      <!-- and for testing, JUnit is needed -->
     <dependency>
@@ -52,6 +56,9 @@ access to large in-memory datasets.
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-release-plugin</artifactId>
             <version>2.0</version>
+            <configuration>
+                <mavenExecutorId>forked-path</mavenExecutorId>
+            </configuration>
         </plugin>
         <plugin><!-- plug-in to attach source bundle in repo -->
           <groupId>org.apache.maven.plugins</groupId>
@@ -128,6 +135,7 @@ com.ning.tr13.util
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.1</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
