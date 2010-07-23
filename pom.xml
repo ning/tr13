@@ -22,7 +22,7 @@ access to large in-memory datasets.
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>[4.0.0,5.0.0)</version>
+      <version>4.8.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
