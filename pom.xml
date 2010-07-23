@@ -9,11 +9,20 @@
   <description>Library for building simple compact read-only Tries, for space-efficient
 access to large in-memory datasets.
   </description>
+  <url>http://github.com/ning/tr13</url>
   <scm>
     <connection>scm:git:git@github.com:ning/tr13.git</connection>
     <developerConnection>scm:git:git@github.com:ning/tr13.git</developerConnection>
     <url>http://github.com/ning/tr13</url>    
   </scm>
+  <developers>
+        <developer>
+            <id>tatu</id>
+            <name>Tatu Saloranta</name>
+            <email>tatu@ning.com</email>
+        </developer>
+  </developers>
+
   <prerequisites>
     <maven>2.2.1</maven>
   </prerequisites>
