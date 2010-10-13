@@ -1,11 +1,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion> 
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>5</version>
+  </parent>
   <groupId>com.ning</groupId>
   <artifactId>tr13</artifactId>
   <name>Ning-tr13</name>
   <version>0.2.6-SNAPSHOT</version>
   <!-- TODO: as OSGi bundle -->
-  <packaging>jar</packaging>
+  <packaging>bundle</packaging>
   <description>Library for building simple compact read-only Tries, for space-efficient
 access to large in-memory datasets.
   </description>
@@ -29,17 +34,6 @@ access to large in-memory datasets.
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-
-  <dependencies>
-     <!-- and for testing, JUnit is needed -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.1</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-  <!-- Licensing -->
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
@@ -52,6 +46,16 @@ access to large in-memory datasets.
     <url>http://www.ning.com</url>
   </organization>
 
+  <dependencies>
+     <!-- and for testing, JUnit is needed -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.8.1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -61,15 +65,7 @@ access to large in-memory datasets.
           <target>1.6</target>
         </configuration>
       </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-release-plugin</artifactId>
-            <version>2.0</version>
-            <configuration>
-                <mavenExecutorId>forked-path</mavenExecutorId>
-            </configuration>
-        </plugin>
-        <plugin><!-- plug-in to attach source bundle in repo -->
+      <plugin><!-- plug-in to attach source bundle in repo -->
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
           <executions>
@@ -80,33 +76,20 @@ access to large in-memory datasets.
               </goals>
             </execution>
           </executions>
-        </plugin>
-        <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.6</version>
-                <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
-                    <encoding>UTF-8</encoding>
-                    <maxmemory>1g</maxmemory>
-                    <links>
-                        <link>http://java.sun.com/javase/6/docs/api/</link>
-                    </links>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-        </plugin>
-
-        <!-- Plus, let's make jars OSGi bundles as well  -->
-        <plugin>
+      </plugin>
+      <plugin><!-- javadocs? yes please -->
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-javadoc-plugin</artifactId>
+         <version>2.6.1</version>
+          <configuration>
+              <encoding>UTF-8</encoding>
+              <links>
+                  <link>http://java.sun.com/javase/6/docs/api/</link>
+              </links>
+          </configuration>
+      </plugin>
+      <!-- Plus, let's make jars OSGi bundles as well  -->
+      <plugin>
           <groupId>org.apache.felix</groupId>
           <artifactId>maven-bundle-plugin</artifactId>
 <!--version>2.0.0</version-->
@@ -123,13 +106,27 @@ access to large in-memory datasets.
 </Private-Package>
               <Export-Package>
 com.ning.tr13,
+com.ning.tr13.build,
+com.ning.tr13.impl.bytes,
+com.ning.tr13.impl.vint,
+com.ning.tr13.lookup,
+com.ning.tr13.tools,
 com.ning.tr13.util
 </Export-Package>
             </instructions>
           </configuration>
-        </plugin>
+      </plugin>
+      <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-release-plugin</artifactId>
+            <version>2.0</version>
+            <configuration>
+                <mavenExecutorId>forked-path</mavenExecutorId>
+            </configuration>
+      </plugin>
     </plugins>
   </build>
+
   <profiles>
         <profile>
             <id>release-sign-artifacts</id>
@@ -159,57 +156,4 @@ com.ning.tr13.util
             </build>
         </profile>
   </profiles>
-
-  <!-- published using oss.sonatype.org: -->
-  <repositories>
-    <repository>
-      <id>sonatype</id>
-      <name>Sonatype</name>
-      <layout>default</layout>
-      <url>http://oss.sonatype.org/content/repositories/releases</url>
-      <releases>
-        <enabled>true</enabled>
-        <updatePolicy>daily</updatePolicy>
-        <checksumPolicy>warn</checksumPolicy>
-      </releases>
-    </repository>
-    <repository>
-      <id>maven</id>
-      <name>Maven</name>
-      <layout>default</layout>
-      <url>http://repo1.maven.org/maven2</url>
-      <releases>
-        <enabled>true</enabled>
-        <updatePolicy>daily</updatePolicy>
-        <checksumPolicy>warn</checksumPolicy>
-      </releases>
-    </repository>
-  </repositories>
-
-  <!-- Let's also try to automate deployments?
-    -->
-  <distributionManagement>
-    <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>Sonatype Nexus Snapshots</name>
-      <url>http://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Nexus Release Repository</name>
-      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-
-<!--
-    <repository>
-      <uniqueVersion>false</uniqueVersion>
-      <id>sonatype-release</id>
-      <name>Sonatype Maven2 Repository</name>
-      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-      <layout>default</layout>
-    </repository>
--->
-
-  </distributionManagement>
-
 </project>
