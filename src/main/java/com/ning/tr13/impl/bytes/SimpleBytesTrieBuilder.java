@@ -2,7 +2,7 @@ package com.ning.tr13.impl.bytes;
 
 import java.io.*;
 
-import com.ning.tr13.KeyValueReader;
+import com.ning.tr13.KeyValueSource;
 import com.ning.tr13.build.ClosedTrieNodeFactory;
 import com.ning.tr13.build.OpenTrieNode;
 import com.ning.tr13.build.SimpleTrieBuilder;
@@ -12,11 +12,11 @@ public class SimpleBytesTrieBuilder
 {
     private final static BytesNodeFactory nodeFactory = new BytesNodeFactory();
 
-    public SimpleBytesTrieBuilder(KeyValueReader<byte[]> r) {
+    public SimpleBytesTrieBuilder(KeyValueSource<byte[]> r) {
         this(r, false);
     }
     
-    public SimpleBytesTrieBuilder(KeyValueReader<byte[]> r, boolean diagnostics) {
+    public SimpleBytesTrieBuilder(KeyValueSource<byte[]> r, boolean diagnostics) {
         super(r, diagnostics);
     }
 

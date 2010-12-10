@@ -2,7 +2,7 @@ package com.ning.tr13.impl.vint;
 
 import java.io.*;
 
-import com.ning.tr13.KeyValueReader;
+import com.ning.tr13.KeyValueSource;
 import com.ning.tr13.build.ClosedTrieNodeFactory;
 import com.ning.tr13.build.OpenTrieNode;
 import com.ning.tr13.build.SimpleTrieBuilder;
@@ -12,11 +12,11 @@ public class SimpleVIntTrieBuilder
 {
     private final static VIntNodeFactory nodeFactory = new VIntNodeFactory();
     
-    public SimpleVIntTrieBuilder(KeyValueReader<Long> r) {
+    public SimpleVIntTrieBuilder(KeyValueSource<Long> r) {
         this(r, false);
     }
     
-    public SimpleVIntTrieBuilder(KeyValueReader<Long> r, boolean diagnostics) {
+    public SimpleVIntTrieBuilder(KeyValueSource<Long> r, boolean diagnostics) {
         super(r, diagnostics);
     }
 

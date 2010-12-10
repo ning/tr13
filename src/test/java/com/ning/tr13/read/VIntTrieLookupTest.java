@@ -77,26 +77,25 @@ public class VIntTrieLookupTest
      */
 
     private static class MapReader
-        extends KeyValueReader<Long>
+        extends KeyValueSource<Long>
     {
         final Map<String,Number> _entries;
+ 
+        protected int _lineNr;
         
-        public MapReader(Map<String,Number> entries) throws IOException        
-        {
-            super(new ByteArrayInputStream(new byte[0]));
+        public MapReader(Map<String,Number> entries) {
             _entries = entries;
         }
-
-        @Override
-        protected void parseAndHandle(KeyValueReader.ValueCallback<Long> handler, byte[] key, String value)
-        { }
         
         @Override
         public void readAll(ValueCallback<Long> handler) throws IOException
         {
             for (Map.Entry<String,Number> en : _entries.entrySet()) {
+                ++_lineNr;
                 handler.handleEntry(UTF8Codec.toUTF8(en.getKey()), en.getValue().longValue());
             }
         }
+
+        @Override public int getLineNumber() { return _lineNr; }
     }
 }

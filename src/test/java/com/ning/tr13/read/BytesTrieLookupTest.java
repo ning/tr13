@@ -1,15 +1,13 @@
 package com.ning.tr13.read;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
 
-import com.ning.tr13.KeyValueReader;
+import com.ning.tr13.KeyValueSource;
 import com.ning.tr13.TrieLookup;
 import com.ning.tr13.impl.bytes.ByteArrayBytesTrieLookup;
 import com.ning.tr13.impl.bytes.ByteBufferBytesTrieLookup;
@@ -83,27 +81,26 @@ for (int i = 0; i < raw.length; ++i) {
      */
 
     private static class MapReader
-        extends KeyValueReader<byte[]>
+        extends KeyValueSource<byte[]>
     {
         final Map<String,String> _entries;
-        
-        public MapReader(Map<String,String> entries) throws IOException        
-        {
-            super(new ByteArrayInputStream(new byte[0]));
-            _entries = entries;
-        }
 
-        @Override
-        protected void parseAndHandle(KeyValueReader.ValueCallback<byte[]> handler, byte[] key, String value)
-        { }
+        protected int _lineNr;
+        
+        public MapReader(Map<String,String> entries) {
+            _entries = entries;
+        }      
         
         @Override
         public void readAll(ValueCallback<byte[]> handler) throws IOException
         {
             for (Map.Entry<String,String> en : _entries.entrySet()) {
+                ++_lineNr;
                 handler.handleEntry(UTF8Codec.toUTF8(en.getKey()),
                         UTF8Codec.toUTF8(en.getValue()));
             }
         }
+
+        @Override public int getLineNumber() { return _lineNr; }
     }
 }

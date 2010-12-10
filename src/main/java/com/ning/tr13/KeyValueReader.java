@@ -5,21 +5,19 @@ import java.io.*;
 import com.ning.tr13.util.UTF8Codec;
 
 /**
- * Class that defines abstraction used for reading trie TEST_ENTRIES
- * (from a file or other resource).
+ * Class that defines abstraction used for reading trie entries from
+ * a stream source (like file) that contains entries as textual
+ * entries
  *<p>
  * Currently customization can be done by sub-classing; should
  * refactor to allow bit cleaner extensibility.
  * 
+ * @param <T> Type of values source provides
+ * 
  * @author tatu
  */
-public abstract class KeyValueReader<T>
+public abstract class KeyValueReader<T> extends KeyValueSource<T>
 {
-    public interface ValueCallback<V>
-    {
-        public void handleEntry(byte[] key, V value);
-    }
-    
     public final static char DEFAULT_SEPARATOR_CHAR = '|';
     
     protected final BufferedReader _reader;
@@ -55,8 +53,6 @@ public abstract class KeyValueReader<T>
         _reader.close();
     }
     
-    public int getLineNumber() { return _lineNumber; }
-
     public void readAll(ValueCallback<T> handler) throws IOException
     {
         String line;
@@ -70,7 +66,8 @@ public abstract class KeyValueReader<T>
                 // !!! TODO: optimize
                 String id = line.substring(0, ix);
                 byte[] key = UTF8Codec.toUTF8(id);
-                parseAndHandle(handler, key, line.substring(ix+1).trim());
+                T value = toValue(line.substring(ix+1).trim());
+                handler.handleEntry(key, value);
             }
         }
         if (_closeWhenDone) {
@@ -78,6 +75,11 @@ public abstract class KeyValueReader<T>
         }
     }
 
-    protected abstract void parseAndHandle(ValueCallback<T> handler, byte[] key, String value)
-        throws IOException;
+    /**
+     * Helper method subclasses implement to convert from String to value
+     * type.
+     */
+    public abstract T toValue(String value) throws IOException;
+    
+    public int getLineNumber() { return _lineNumber; }
 }

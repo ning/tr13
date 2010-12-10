@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.ning.tr13.KeyValueReader;
+import com.ning.tr13.KeyValueSource;
 import com.ning.tr13.TrieBuilder;
 import com.ning.tr13.lookup.TrieHeader;
 import com.ning.tr13.util.UTF8Codec;
@@ -16,7 +17,7 @@ import com.ning.tr13.util.UTF8Codec;
 public abstract class SimpleTrieBuilder<T>
     extends TrieBuilder<T>
 {
-    protected final KeyValueReader<T> _reader;
+    protected final KeyValueSource<T> _source;
 
     /**
      * Flag to enable crude diagnostics to STDOUT
@@ -34,12 +35,12 @@ public abstract class SimpleTrieBuilder<T>
      */
     protected boolean _reorderEntries;
     
-    public SimpleTrieBuilder(KeyValueReader<T> r) {
+    public SimpleTrieBuilder(KeyValueSource<T> r) {
         this(r, false);
     }
     
-    public SimpleTrieBuilder(KeyValueReader<T> r, boolean diagnostics) {
-        _reader = r;
+    public SimpleTrieBuilder(KeyValueSource<T> r, boolean diagnostics) {
+        _source = r;
         _diagnostics = diagnostics;
     }
 
@@ -85,7 +86,7 @@ public abstract class SimpleTrieBuilder<T>
         final AtomicInteger count = new AtomicInteger(0);
         final ClosedTrieNodeFactory<T> nodeFactory = closedTrieNodeFactory();
 
-        _reader.readAll(new KeyValueReader.ValueCallback<T>() {
+        _source.readAll(new KeyValueReader.ValueCallback<T>() {
             @Override
             public void handleEntry(byte[] id, T value) {
                 OpenTrieNode<T> curr = root;
@@ -96,7 +97,7 @@ public abstract class SimpleTrieBuilder<T>
                     if (next == null || next.getNodeByte() != id[i]) break;
                     if (++i >= id.length) { // sanity check, could skip, but better safe than sorry
                         throw new IllegalArgumentException("Malformed input, line "
-                                +_reader.getLineNumber()+": id '"+UTF8Codec.fromUTF8(id)+"' not properly ordered");
+                                +_source.getLineNumber()+": id '"+UTF8Codec.fromUTF8(id)+"' not properly ordered");
                     }
                     curr = next;
                 }

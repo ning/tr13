@@ -22,12 +22,9 @@ public class BytesValueReader
     {
         super(in, sepChar);
     }
-    
+
     @Override
-    protected void parseAndHandle(KeyValueReader.ValueCallback<byte[]> handler, byte[] key, String value)
-        throws IOException
-    {
-        byte[] bytes = UTF8Codec.toUTF8(value);
-        handler.handleEntry(key, bytes);
+    public byte[] toValue(String value) {
+        return UTF8Codec.toUTF8(value);
     }
 }

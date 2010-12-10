@@ -21,14 +21,12 @@ public class VIntValueReader
     {
         super(in, sepChar);
     }
-    
+
     @Override
-    protected void parseAndHandle(KeyValueReader.ValueCallback<Long> handler, byte[] key, String value)
-        throws IOException
+    public Long toValue(String value) throws IOException
     {
         try {
-            Long l = new Long(value);
-            handler.handleEntry(key, l);
+            return new Long(value);
         } catch (NumberFormatException e) {
             throw new IOException("Invalid line #"+getLineNumber()+", unrecognized number '"+value+"'");
         }
