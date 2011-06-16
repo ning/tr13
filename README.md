@@ -4,3 +4,10 @@ Main benefits for using such tries is both relatively low memory usage (typicall
 
 Mailing list: http://groups.google.com/group/ning-tr13-users
 
+# Usage
+
+(need to write sample code here!)
+
+# Documentation
+
+Check out [https://github.com/ning/tr13/wiki]
