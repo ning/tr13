@@ -1,0 +1,7 @@
+com.ning.tr13
+com.ning.tr13.build
+com.ning.tr13.impl.bytes
+com.ning.tr13.impl.vint
+com.ning.tr13.lookup
+com.ning.tr13.tools
+com.ning.tr13.util
