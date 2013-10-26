@@ -32,7 +32,7 @@ public abstract class TrieBuilder<T>
 
     /**
      * Main build method that will construct full InputCollator and return it as
-     * a {@link ClosedTrieNode} instance, which can be simply serialized
+     * a {@link TrieNode} instance, which can be simply serialized
      * to an {@link OutputStream}
      * 
      * @return Root node

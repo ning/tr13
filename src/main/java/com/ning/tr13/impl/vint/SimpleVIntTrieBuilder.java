@@ -41,6 +41,7 @@ public class SimpleVIntTrieBuilder
         File outputFile = new File(args[1]);
         OutputStream out = new FileOutputStream(outputFile);
         b.buildAndWrite(out, true);
+        r.close();
         out.close();
         System.out.println("Build complete: "+b._linesRead+" lines read, result file length is "+(outputFile.length()>>10)+" kB");
     }
