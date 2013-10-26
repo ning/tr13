@@ -1,5 +1,11 @@
+# emacs backups
+*~
+
 # Skip maven 'target' directory
 target
+
+# release plugin
+release.properties
 
 # plus eclipse crap
 .classpath
