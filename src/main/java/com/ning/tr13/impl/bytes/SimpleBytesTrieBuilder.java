@@ -42,6 +42,15 @@ public class SimpleBytesTrieBuilder
         OutputStream out = new FileOutputStream(outputFile);
         b.buildAndWrite(out, true);
         out.close();
-        System.out.println("Build complete: "+b._linesRead+" lines read, result file length is "+(outputFile.length()>>10)+" kB");
+        System.out.printf("Build complete: %d lines read, result file length is %s",
+                b._linesRead, desc(outputFile.length()));
+    }
+
+    private static String desc(long count) {
+        if (count < 2000) return String.valueOf(count);
+        if (count < 2000000) {
+          return String.format("%.1fkB", count / 1000.0);
+        }
+        return String.format("%.1fMB", count / 1000000.0);
     }
 }
