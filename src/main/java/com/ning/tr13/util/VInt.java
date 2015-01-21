@@ -16,7 +16,6 @@ public class VInt
      * @param bitsForFirstByte Number of bits in the first value byte that can be
      *  used for value itself: 8 for "pure" VInts, less for types that use leading
      *  bits for other purposes
-     * @return
      */
     public static int lengthForUnsigned(long value, int bitsForFirstByte)
     {
@@ -112,7 +111,7 @@ public class VInt
      *   included)
      * @param offset Offset of the first data byte in buffer
      * 
-     * @result Offset of the first byte following decoded long
+     * @return Offset of the first byte following decoded long
      */
     public static int bytesToUnsigned(int bitsForFirstByte, byte[] buffer, int offset,
             long[] resultBuffer)

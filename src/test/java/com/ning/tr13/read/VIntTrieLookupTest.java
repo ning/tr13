@@ -90,9 +90,10 @@ public class VIntTrieLookupTest
         @Override
         public void readAll(ValueCallback<Long> handler) throws IOException
         {
+            UTF8Codec codec = new UTF8Codec();
             for (Map.Entry<String,Number> en : _entries.entrySet()) {
                 ++_lineNr;
-                handler.handleEntry(UTF8Codec.toUTF8(en.getKey()), en.getValue().longValue());
+                handler.handleEntry(codec.encodeNonReentrant(en.getKey()), en.getValue().longValue());
             }
         }
 

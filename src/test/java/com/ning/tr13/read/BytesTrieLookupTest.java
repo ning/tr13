@@ -60,7 +60,7 @@ for (int i = 0; i < raw.length; ++i) {
         int ix = 0;
         for (Map.Entry<String,String> entry : TEST_ENTRIES.entrySet()) {
             ++ix;
-            byte[] expValue = UTF8Codec.toUTF8(entry.getValue());
+            byte[] expValue = UTF8Codec.encodeAsUTF8(entry.getValue());
             String desc = "Entry "+ix+"/"+TEST_ENTRIES.size();
             byte[] actual = trie.findValue(entry.getKey().getBytes("UTF-8"));
             assertNotNull(desc+" not found", actual);
@@ -96,8 +96,8 @@ for (int i = 0; i < raw.length; ++i) {
         {
             for (Map.Entry<String,String> en : _entries.entrySet()) {
                 ++_lineNr;
-                handler.handleEntry(UTF8Codec.toUTF8(en.getKey()),
-                        UTF8Codec.toUTF8(en.getValue()));
+                handler.handleEntry(UTF8Codec.encodeAsUTF8(en.getKey()),
+                        UTF8Codec.encodeAsUTF8(en.getValue()));
             }
         }
 

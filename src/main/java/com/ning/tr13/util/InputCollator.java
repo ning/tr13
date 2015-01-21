@@ -21,10 +21,30 @@ public class InputCollator
     {
         _separatorChar = sepChar;
     }
-    
+
     public void doIt(String filename) throws Exception
     {
-        BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(filename), "UTF-8"));
+        BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream(filename),
+                UTF8Codec.UTF8));
+        boolean ok = false;
+        try {
+            _doIt(r, filename);
+            ok = true;
+        } finally {
+            // try not to hide the exception, except if we already have an exception...
+            if (ok) {
+                r.close();
+            } else {
+                try {
+                    r.close();
+                } catch (IOException e) { }
+            }
+        }
+    }
+
+    protected void _doIt(BufferedReader r, String filename) throws Exception
+    {
+        
         String line;
         String prevIdStr = "";
         int linenr = 0;
@@ -32,7 +52,7 @@ public class InputCollator
 
         final HashMap<String,Integer> ids = new HashMap<String,Integer>();
         int nextId = 0;
-        
+
         while ((line = r.readLine()) != null) {
             if ((++linenr & 0xFFFFF) == 0) {
                 System.err.println("Processed "+(linenr>>10)+"K lines, skipped "+(skipped>>10)+"K; last id: "+nextId);

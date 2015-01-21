@@ -15,7 +15,7 @@ public class ByteBufferBytesTrieLookup
     protected final ByteBuffer _byteBuffer;
 
     /**
-     * Number of bytes in {@link #_byteArray}
+     * Number of bytes in {@link #_byteBuffer}
      */
     protected final int _size;
 

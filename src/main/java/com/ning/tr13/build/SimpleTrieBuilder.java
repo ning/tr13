@@ -97,7 +97,7 @@ public abstract class SimpleTrieBuilder<T>
                     if (next == null || next.getNodeByte() != id[i]) break;
                     if (++i >= id.length) { // sanity check, could skip, but better safe than sorry
                         throw new IllegalArgumentException("Malformed input, line "
-                                +_source.getLineNumber()+": id '"+UTF8Codec.fromUTF8(id)+"' not properly ordered");
+                                +_source.getLineNumber()+": id '"+UTF8Codec.decodeFromUTF8(id)+"' not properly ordered");
                     }
                     curr = next;
                 }

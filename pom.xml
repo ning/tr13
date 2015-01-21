@@ -50,7 +50,7 @@ access to large in-memory datasets.
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.8.1</version>
+      <version>4.11</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -59,6 +59,7 @@ access to large in-memory datasets.
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.1</version>
         <configuration>
           <source>1.6</source>
           <target>1.6</target>
@@ -79,13 +80,13 @@ access to large in-memory datasets.
       <plugin><!-- javadocs? yes please -->
          <groupId>org.apache.maven.plugins</groupId>
          <artifactId>maven-javadoc-plugin</artifactId>
-         <version>2.6.1</version>
+         <version>2.8.1</version>
           <configuration>
               <source>1.6</source>
               <target>1.6</target>
               <encoding>UTF-8</encoding>
               <links>
-                  <link>http://java.sun.com/javase/6/docs/api/</link>
+                  <link>http://docs.oracle.com/javase/6/docs/api/</link>
               </links>
           </configuration>
           <executions>
@@ -102,7 +103,7 @@ access to large in-memory datasets.
       <plugin>
           <groupId>org.apache.felix</groupId>
           <artifactId>maven-bundle-plugin</artifactId>
-<!--version>2.0.0</version-->
+          <version>2.5.3</version>
           <extensions>true</extensions>
           <configuration>
             <instructions>
@@ -129,7 +130,7 @@ com.ning.tr13.util
       <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-release-plugin</artifactId>
-            <version>2.0</version>
+            <version>2.4.2</version>
             <configuration>
                 <mavenExecutorId>forked-path</mavenExecutorId>
             </configuration>

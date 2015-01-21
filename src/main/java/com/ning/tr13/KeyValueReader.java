@@ -5,9 +5,15 @@ import java.io.*;
 import com.ning.tr13.util.UTF8Codec;
 
 /**
- * Class that defines abstraction used for reading trie entries from
- * a stream source (like file) that contains entries as textual
- * entries
+ * Class that defines abstraction used for reading entries from
+ * a stream source (like file), to be used for building a trie
+ * structure. Entry input is assumed to be encoded in UTF-8,
+ * and use a simple character separator
+ * so that beginning of the line (before separator) is the key, and
+ * remained of the line (after separator) value.
+ *<p>
+ * About the only additional feature is that empty lines are skipped;
+ * and lines that start with '#' are taken to be comments.
  *<p>
  * Currently customization can be done by sub-classing; should
  * refactor to allow bit cleaner extensibility.
@@ -41,7 +47,7 @@ public abstract class KeyValueReader<T> extends KeyValueSource<T>
     
     public KeyValueReader(InputStream in, char sepChar) throws IOException
     {
-        _reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+        _reader = new BufferedReader(new InputStreamReader(in, UTF8Codec.UTF8));
         _separatorChar = sepChar;
     }
 
@@ -56,6 +62,7 @@ public abstract class KeyValueReader<T> extends KeyValueSource<T>
     public void readAll(ValueCallback<T> handler) throws IOException
     {
         String line;
+        UTF8Codec codec = new UTF8Codec();
         
         while ((line = _reader.readLine()) != null) {
             ++_lineNumber;
@@ -65,7 +72,7 @@ public abstract class KeyValueReader<T> extends KeyValueSource<T>
             if (ix > 0) {
                 // !!! TODO: optimize
                 String id = line.substring(0, ix);
-                byte[] key = UTF8Codec.toUTF8(id);
+                byte[] key = codec.encodeNonReentrant(id);
                 T value = toValue(line.substring(ix+1).trim());
                 handler.handleEntry(key, value);
             }

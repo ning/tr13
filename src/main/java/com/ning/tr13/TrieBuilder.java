@@ -18,7 +18,7 @@ public abstract class TrieBuilder<T>
      * write it to given output stream.
      *<p>
      * NOTE: method will NOT close the output stream; caller has to do that
-     * (it will be flushed) however.
+     * (it will be flushed however).
      * 
      * @param out
      * @param writeHeader Whether to write trie header before actual data;

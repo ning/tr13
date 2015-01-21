@@ -16,7 +16,7 @@ public abstract class ClosedTrieNode<T>
 {
     /**
      * This constants is used as safe minimum size for temporary
-     * buffer to pass to {@link #writeTo} method. It is actually
+     * buffer to pass to {@link #serializeTo} method. It is actually
      * set to quite a bit higher than strict minimum, just to give
      * some room for expansion in case structure changes.
      */

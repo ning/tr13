@@ -1,8 +1,7 @@
 package com.ning.tr13;
 
 /**
- * 
- * @author tatu
+ * API for accessing entries of a trie.
  *
  * @param <V> Value type of the underlying Trie
  */
@@ -12,8 +11,6 @@ public abstract class TrieLookup<V>
      * Class used for reading persistent trie structure, and accessing values it
      * has. Since there are multiple backend implementations, this is an abstract
      * class with API and factory methods for creating specialized instances.
-     * 
-     * @author tatu
      */
     protected TrieLookup() { }
     
