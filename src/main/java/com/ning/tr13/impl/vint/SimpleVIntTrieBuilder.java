@@ -43,6 +43,7 @@ public class SimpleVIntTrieBuilder
         b.buildAndWrite(out, true);
         r.close();
         out.close();
-        System.out.println("Build complete: "+b._linesRead+" lines read, result file length is "+(outputFile.length()>>10)+" kB");
+        System.out.printf("Build complete: %d lines read, result file length is %s",
+                b._linesRead, sizeDesc(outputFile.length()));
     }
 }

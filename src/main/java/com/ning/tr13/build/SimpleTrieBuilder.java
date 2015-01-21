@@ -116,4 +116,12 @@ public abstract class SimpleTrieBuilder<T>
         _linesRead = count.get();    
         return root.close(nodeFactory, _reorderEntries);
     }
+
+    protected static String sizeDesc(long count) {
+        if (count < 2000) return String.valueOf(count);
+        if (count < 2000000) {
+          return String.format("%.1fkB", count / 1000.0);
+        }
+        return String.format("%.1fMB", count / 1000000.0);
+    }
 }

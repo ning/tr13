@@ -43,14 +43,6 @@ public class SimpleBytesTrieBuilder
         b.buildAndWrite(out, true);
         out.close();
         System.out.printf("Build complete: %d lines read, result file length is %s",
-                b._linesRead, desc(outputFile.length()));
-    }
-
-    private static String desc(long count) {
-        if (count < 2000) return String.valueOf(count);
-        if (count < 2000000) {
-          return String.format("%.1fkB", count / 1000.0);
-        }
-        return String.format("%.1fMB", count / 1000000.0);
+                b._linesRead, sizeDesc(outputFile.length()));
     }
 }
