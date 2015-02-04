@@ -24,7 +24,7 @@ Two-phase processing is needed since the actual result size is not known in adva
 
 ## Sample
 
-...
+This [tr13 from LevelDB](https://gist.github.com/cowtowncoder/4e0b2308b1f660b8b855) gist shows simple usage.
 
 ## Documentation
 
